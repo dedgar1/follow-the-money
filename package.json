@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "scripts": {
+    "codegen": "pnpm --filter web codegen",
+    "test:web": "pnpm --filter web test"
+  }
+}

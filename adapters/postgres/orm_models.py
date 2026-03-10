@@ -238,3 +238,69 @@ class RawVoteRow(Base):
         Index("ix_raw_votes_member_bioguide_id", "member_bioguide_id"),
         Index("ix_raw_votes_is_processed", "is_processed"),
     )
+
+
+# ── Canonical identity tables (Sprint 3) ──────────────────────────────────────
+
+
+class CanonicalRepRow(Base):
+    """Resolved, deduplicated representative — canonical source of truth."""
+
+    __tablename__ = "canonical_reps"
+
+    id:                Mapped[str] = mapped_column(String(26), primary_key=True)
+    full_name:         Mapped[str] = mapped_column(String(500), nullable=False)
+    party:             Mapped[str] = mapped_column(String(1), nullable=False)
+    chamber:           Mapped[str] = mapped_column(String(10), nullable=False)
+    state:             Mapped[str] = mapped_column(String(2), nullable=False)
+    district:          Mapped[str | None] = mapped_column(String(10), nullable=True)
+    bioguide_id:       Mapped[str | None] = mapped_column(String(20), nullable=True, unique=True)
+    fec_candidate_id:  Mapped[str | None] = mapped_column(String(20), nullable=True, unique=True)
+    created_at:        Mapped[datetime] = mapped_column(DateTime, default=_now)
+    updated_at:        Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+    __table_args__ = (
+        Index("ix_canonical_reps_state", "state"),
+        Index("ix_canonical_reps_chamber", "chamber"),
+        Index("ix_canonical_reps_party", "party"),
+    )
+
+
+class CanonicalDonorRow(Base):
+    """Resolved, deduplicated donor — canonical source of truth."""
+
+    __tablename__ = "canonical_donors"
+
+    id:         Mapped[str] = mapped_column(String(26), primary_key=True)
+    name:       Mapped[str] = mapped_column(String(500), nullable=False)
+    donor_type: Mapped[str] = mapped_column(String(20), nullable=False)
+    industry:   Mapped[str | None] = mapped_column(String(100), nullable=True)
+    state:      Mapped[str | None] = mapped_column(String(2), nullable=True)
+    fec_ids:    Mapped[str] = mapped_column(String, default="[]")  # JSON array of FEC IDs
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+    __table_args__ = (
+        Index("ix_canonical_donors_name", "name"),
+        Index("ix_canonical_donors_donor_type", "donor_type"),
+        Index("ix_canonical_donors_industry", "industry"),
+    )
+
+
+class LisBioguideMapRow(Base):
+    """Maps Senate LIS member IDs to Congress.gov bioguide_ids."""
+
+    __tablename__ = "lis_bioguide_map"
+
+    lis_member_id: Mapped[str] = mapped_column(String(20), primary_key=True)
+    bioguide_id:   Mapped[str] = mapped_column(
+        String(20), ForeignKey("canonical_reps.bioguide_id", ondelete="CASCADE"), nullable=False
+    )
+    full_name:     Mapped[str] = mapped_column(String(500), nullable=False)
+    state:         Mapped[str] = mapped_column(String(2), nullable=False)
+    party:         Mapped[str] = mapped_column(String(1), nullable=False)
+    created_at:    Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    __table_args__ = (
+        Index("ix_lis_bioguide_map_bioguide_id", "bioguide_id"),
+    )

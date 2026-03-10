@@ -30,32 +30,52 @@ Every correlation shown is factual, statistically defensible, and links to its s
 
 ---
 
-## Local development
+## Running locally
 
-**Prerequisites:** Docker Desktop, Python 3.12, Node 20, pnpm
+**Prerequisites:** Docker Desktop (running), Git
 
 ```bash
-# 1. Clone and copy env
 git clone https://github.com/your-org/follow-the-money.git
 cd follow-the-money
-cp .env.example .env
-# Fill in API keys in .env (FEC and Congress.gov are free)
+cp .env.example .env        # add API keys if you have them (see below)
+```
 
-# 2. Start everything
-make up
-# localhost:3000  → Next.js frontend
-# localhost:8000  → FastAPI + /graphql playground
-# localhost:8000/docs → REST API docs
-# localhost:5555  → Flower (Celery task monitor)
-# localhost:7474  → Neo4j Browser
-# localhost:5432  → PostgreSQL
+### Start
 
-# 3. Apply database migrations
-docker exec -it $(docker ps -qf name=api) alembic upgrade head
+```bash
+make dev
+```
 
-# 4. Run tests
-make test          # Python (pytest)
-cd apps/web && pnpm test --run   # TypeScript (Vitest)
+Builds images, starts all services, waits for health checks, seeds sample data, then prints:
+
+```
+  ✓  Follow the Money is running
+
+  Frontend  →  http://localhost:3000
+  API docs  →  http://localhost:8000/docs
+  GraphQL   →  http://localhost:8000/graphql
+  Neo4j     →  http://localhost:7474
+  Flower    →  http://localhost:5555
+```
+
+### Stop
+
+```bash
+make stop
+```
+
+### Re-seed data
+
+```bash
+make seed          # add any new seed rows (idempotent)
+make seed-reset    # wipe seed rows and re-insert from scratch
+```
+
+### Tests
+
+```bash
+make test                              # Python — pytest (237 tests)
+cd apps/web && pnpm test --run         # TypeScript — Vitest (5 tests)
 ```
 
 ---
@@ -116,7 +136,7 @@ The primary aggregate root is `DonorRepRelationship` — the financial relations
 | 2 | FEC adapter · Congress.gov + Senate XML adapters · Celery pipeline Stage 1 | Done |
 | 3 | rapidfuzz entity resolver · canonical_reps/donors · identity resolution task | Done |
 | 4 | Finance aggregation · Neo4j graph writes · DonorRepRelationship aggregates | Done |
-| 5 | Homepage · Rep profile page · D3 charts | Planned |
+| 5 | Homepage · Rep profile · Donor detail · REST API endpoints | Done |
 | 6 | Neo4j multi-hop queries · D3 network graph | Planned |
 | 7 | Bill models · spaCy NLP classifier · voting record UI | Planned |
 | 8 | CorrelationEngine · AlignmentScore · timeline + heatmap viz | Planned |

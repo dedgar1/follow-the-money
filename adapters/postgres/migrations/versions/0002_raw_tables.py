@@ -48,7 +48,7 @@ def upgrade() -> None:
     op.create_table(
         "raw_votes",
         sa.Column("id", sa.String(26), primary_key=True),
-        sa.Column("source", sa.String(20), nullable=False, server_default="propublica_api"),
+        sa.Column("source", sa.String(20), nullable=False, server_default="congress_api"),
         sa.Column("source_id", sa.String(300), nullable=False),
         sa.Column("congress", sa.Integer, nullable=False, server_default="0"),
         sa.Column("session", sa.Integer, nullable=False, server_default="1"),

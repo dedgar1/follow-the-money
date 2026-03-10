@@ -61,23 +61,26 @@ class RawDonor:
 @dataclass
 class RawVote:
     """
-    Raw roll-call vote from ProPublica Congress API.
-    One row per (member, roll_call) — one vote per person per roll call.
+    Raw roll-call vote record. One row per (member, roll_call).
+
+    Sources:
+      House  → Congress.gov API v3  (source="congress_api")
+      Senate → Senate.gov XML feeds (source="senate_xml")
     """
 
     id: str                              # internal ULID
-    source: str = "propublica_api"
-    source_id: str = ""                  # ProPublica roll_call_uri (idempotency key)
+    source: str = "congress_api"
+    source_id: str = ""                  # unique vote URI / identifier (idempotency key)
     congress: int = 0
     session: int = 1
     chamber: str = ""                    # "House" | "Senate"
     roll_call: int = 0
-    bill_id: str = ""                    # ProPublica bill_id, e.g. "hr1-119"
+    bill_id: str = ""                    # e.g. "3424" (HR) or "PN373" (Senate nomination)
     bill_title: str = ""
-    member_bioguide_id: str = ""         # links to CanonicalRep via bioguide_id
+    member_bioguide_id: str = ""         # bioguide_id (House) or lis_member_id (Senate, resolved in Sprint 3)
     member_name: str = ""
-    position: str = ""                   # "Yes" | "No" | "Not Voting" | "Present"
-    voted_at: str = ""                   # "YYYY-MM-DD" raw string from API
+    position: str = ""                   # "Yea" | "Nay" | "Not Voting" | "Present"
+    voted_at: str = ""                   # "YYYY-MM-DD" raw string
     payload: dict[str, Any] = field(default_factory=dict)
     fetched_at: datetime = field(default_factory=_now)
     is_processed: bool = False

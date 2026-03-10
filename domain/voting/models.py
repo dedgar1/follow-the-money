@@ -45,8 +45,8 @@ class Bill:
     title:           str
     industries:      list[Industry] = field(default_factory=list)  # NLP-assigned
     nlp_confidence:  float = 0.0
-    congress:        int | None = None     # e.g. 118
-    propublica_id:   str | None = None    # ProPublica bill slug
+    congress:        int | None = None     # e.g. 119
+    congress_gov_id: str | None = None    # Congress.gov bill slug, e.g. "hr3424"
 
 
 @dataclass

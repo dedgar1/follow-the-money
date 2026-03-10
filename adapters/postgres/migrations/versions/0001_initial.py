@@ -127,7 +127,7 @@ def upgrade() -> None:
         sa.Column("industries", sa.Text, nullable=False, server_default="[]"),
         sa.Column("nlp_confidence", sa.Float, nullable=False, server_default="0.0"),
         sa.Column("congress", sa.Integer, nullable=True),
-        sa.Column("propublica_id", sa.String(50), nullable=True, unique=True),
+        sa.Column("congress_gov_id", sa.String(50), nullable=True, unique=True),
         sa.Column("created_at", sa.DateTime, nullable=False, server_default=sa.func.now()),
     )
 

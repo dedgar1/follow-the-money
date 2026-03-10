@@ -1,7 +1,6 @@
 """
 Congress.gov API v3 client — House votes, members, and bills.
 
-Replaces the discontinued ProPublica Congress API (shut down July 2024).
 Official docs: https://api.congress.gov
 Free API key:  https://api.congress.gov/sign-up/
 

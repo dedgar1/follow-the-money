@@ -41,7 +41,7 @@ def test_raw_donor_fetched_at_is_utc():
 
 def test_raw_vote_defaults():
     vote = RawVote(id="01VOTE")
-    assert vote.source == "propublica_api"
+    assert vote.source == "congress_api"
     assert vote.is_processed is False
     assert vote.payload == {}
 

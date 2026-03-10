@@ -145,7 +145,7 @@ class BillRow(Base):
     industries:      Mapped[str] = mapped_column(Text, default="[]")  # JSON array
     nlp_confidence:  Mapped[float] = mapped_column(Float, default=0.0)
     congress:        Mapped[int | None] = mapped_column(Integer, nullable=True)
-    propublica_id:   Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True)
+    congress_gov_id: Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True)
     created_at:      Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     votes: Mapped[list[VoteRow]] = relationship(back_populates="bill")
@@ -210,12 +210,12 @@ class RawFilingRow(Base):
 
 
 class RawVoteRow(Base):
-    """Raw ProPublica roll-call vote — one row per (member, roll_call)."""
+    """Raw roll-call vote — one row per (member, roll_call). Source: congress_api or senate_xml."""
 
     __tablename__ = "raw_votes"
 
     id:                   Mapped[str] = mapped_column(String(26), primary_key=True)
-    source:               Mapped[str] = mapped_column(String(20), nullable=False, default="propublica_api")
+    source:               Mapped[str] = mapped_column(String(20), nullable=False, default="congress_api")
     source_id:            Mapped[str] = mapped_column(String(300), nullable=False)
     congress:             Mapped[int] = mapped_column(Integer, default=0)
     session:              Mapped[int] = mapped_column(Integer, default=1)

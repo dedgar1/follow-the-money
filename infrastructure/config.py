@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # ── External APIs (Sprint 2) ──────────────────────────────────────────
     fec_api_key: str = Field(default="")
-    congress_api_key: str = Field(default="")   # api.congress.gov — replaces ProPublica
+    congress_api_key: str = Field(default="")   # api.congress.gov
     opensecrets_api_key: str = Field(default="")
     google_civic_api_key: str = Field(default="")
 

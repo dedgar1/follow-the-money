@@ -142,7 +142,7 @@ A shift in voting alignment is only surfaced to users when ALL of the following 
 Runs nightly at 02:00 UTC via cron. Stages are connected by Celery + Redis queue.
 
 ```
-Stage 1: INGESTION        — FEC API + ProPublica API → raw tables (never mutated)
+Stage 1: INGESTION        — FEC API + Congress.gov API + Senate XML → raw tables (never mutated)
 Stage 2: IDENTITY         — rapidfuzz deduplication → canonical entities
 Stage 2: NLP CLASSIFY     — spaCy tags bills with industry categories
 Stage 3: FINANCE ROLLUP   — aggregates → PostgreSQL materialized views + Neo4j
@@ -164,7 +164,8 @@ Stage 4: CORRELATION      — AlignmentScore computation per (rep, industry) pai
 |---|---|---|
 | FEC API | Individual contributions, PAC donations | Free |
 | OpenSecrets API | Industry categorization, dark money | Paid tier needed |
-| ProPublica Congress API | Roll call votes, bills, sponsorships | Free |
+| Congress.gov API v3 | Roll call votes (House), bills, members | Free (key required) |
+| Senate.gov XML feeds | Roll call votes (Senate), per-senator positions | Free (no key) |
 | Google Civic Info API | ZIP code → district lookup | Free tier |
 | Census TIGER Shapefiles | Congressional district boundaries for map | Free |
 
@@ -241,7 +242,8 @@ follow-the-money/
 │   │   └── network_query.py        # Multi-hop traversal
 │   ├── external/
 │   │   ├── fec_client.py
-│   │   ├── propublica_client.py
+│   │   ├── congress_client.py
+│   │   ├── senate_xml_client.py
 │   │   └── opensecrets_client.py
 │   └── nlp/
 │       ├── bill_classifier.py      # spaCy bill → industry tagger
@@ -338,12 +340,12 @@ GET /v1/export/{rep_id}.csv          # CSV export
 | Sprint | Focus |
 |---|---|
 | 1 | Docker Compose · PostgreSQL schema · Neo4j connection · FastAPI skeleton · Next.js scaffold · codegen pipeline |
-| 2 | FEC API adapter · ProPublica adapter · Raw models · Celery pipeline Stage 1 · Fail-loud alerting |
+| 2 | FEC API adapter · Congress.gov API adapter · Senate XML adapter · Raw models · Celery pipeline Stage 1 · Fail-loud alerting |
 | 3 | Donor entity resolver (rapidfuzz) · CanonicalRep/Donor · Identity resolution task |
 | 4 | Contribution models · Finance aggregation · Materialized views · Neo4j graph · GraphQL queries |
 | 5 | Homepage (ZIP + map + search) · Rep profile page · Donut + bar + treemap · Donor detail page |
 | 6 | Neo4j multi-hop queries · D3 force-directed network viz · Donor → reps traversal |
-| 7 | ProPublica vote ingestion · Bill models · spaCy NLP classifier · Voting record UI |
+| 7 | Bill detail enrichment (Congress.gov /bill + /subjects) · Bill models · spaCy NLP classifier · Voting record UI |
 | 8 | CorrelationEngine statistics · AlignmentScore computation · Timeline + heatmap + side-by-side viz · Methodology page |
 | 9 | Public REST API · CSV/JSON export · Embeddable widget · Shareable URLs · Comparison view · Performance |
 

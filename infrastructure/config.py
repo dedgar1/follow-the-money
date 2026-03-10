@@ -39,9 +39,20 @@ class Settings(BaseSettings):
 
     # ── External APIs (Sprint 2) ──────────────────────────────────────────
     fec_api_key: str = Field(default="")
-    propublica_api_key: str = Field(default="")
+    congress_api_key: str = Field(default="")   # api.congress.gov — replaces ProPublica
     opensecrets_api_key: str = Field(default="")
     google_civic_api_key: str = Field(default="")
+
+    # ── Alerting (Sprint 2) ───────────────────────────────────────────────────
+    slack_webhook_url: str = Field(default="")
+    alert_email_to: str = Field(default="")
+    alert_email_from: str = Field(default="alerts@followthemoney.local")
+    smtp_host: str = Field(default="localhost")
+    smtp_port: int = Field(default=587)
+
+    # ── Congress metadata ─────────────────────────────────────────────────────
+    current_congress: int = Field(default=119)   # update each new Congress
+    current_session: int = Field(default=1)
 
     # ── Methodology URL ───────────────────────────────────────────────────
     methodology_url: str = Field(default="http://localhost:3000/methodology")

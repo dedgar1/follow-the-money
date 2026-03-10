@@ -1,14 +1,23 @@
 """
-ProPublica Congress API client — fetches roll call votes, bills, sponsorships.
+ProPublica Congress API — DISCONTINUED July 10, 2024.
 
-TODO Sprint 2: Implement ProPublica API integration.
-Docs: https://projects.propublica.org/api-docs/congress-api/
+Use CongressGovClient (congress_client.py) for House votes, members, and bills.
+Use SenateXmlClient (senate_xml_client.py) for Senate roll call votes.
+
+Reference: https://www.propublica.org/datastore/api/propublica-congress-api
 """
 
 from __future__ import annotations
 
 
-class ProPublicaClient:
-    BASE_URL = "https://api.propublica.org/congress/v1"
+class ProPublicaApiError(Exception):
+    pass
 
-    # TODO Sprint 2: get_recent_votes, get_bill, get_member_votes
+
+class ProPublicaClient:
+    def __init__(self, *args, **kwargs) -> None:
+        raise ProPublicaApiError(
+            "ProPublica Congress API was discontinued on July 10, 2024. "
+            "Use CongressGovClient for House votes/members/bills, "
+            "and SenateXmlClient for Senate votes."
+        )

@@ -41,9 +41,21 @@ def make_celery() -> Celery:
             "task": "pipeline.tasks.resolve_identities.run",
             "schedule": crontab(hour=4, minute=0),   # after both ingest tasks complete
         },
+        "nightly-aggregate-finance": {
+            "task": "pipeline.tasks.aggregate_finance.run",
+            "schedule": crontab(hour=6, minute=0),   # after identity resolution completes
+        },
     }
-    # Auto-discover tasks in pipeline.tasks.*
-    app.autodiscover_tasks(["pipeline.tasks"])
+    # Explicitly include each task module (autodiscover_tasks requires a tasks.py
+    # convention; our tasks live in individual files within pipeline/tasks/).
+    app.conf.include = [
+        "pipeline.tasks.ingest_fec",
+        "pipeline.tasks.ingest_votes",
+        "pipeline.tasks.resolve_identities",
+        "pipeline.tasks.aggregate_finance",
+        "pipeline.tasks.classify_bills",
+        "pipeline.tasks.compute_correlations",
+    ]
     return app
 
 

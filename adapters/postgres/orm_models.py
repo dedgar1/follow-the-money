@@ -200,6 +200,10 @@ class RawFilingRow(Base):
     payload:               Mapped[dict] = mapped_column(JSON, default=dict)
     fetched_at:            Mapped[datetime] = mapped_column(DateTime, default=_now)
     is_processed:          Mapped[bool] = mapped_column(Boolean, default=False)
+    # Set by resolve_identities (Sprint 3) — links filing to its canonical donor
+    canonical_donor_id:    Mapped[str | None] = mapped_column(
+        String(26), ForeignKey("canonical_donors.id"), nullable=True
+    )
 
     __table_args__ = (
         UniqueConstraint("source", "source_id", name="uq_raw_filings_source_source_id"),
@@ -237,6 +241,64 @@ class RawVoteRow(Base):
         Index("ix_raw_votes_congress", "congress"),
         Index("ix_raw_votes_member_bioguide_id", "member_bioguide_id"),
         Index("ix_raw_votes_is_processed", "is_processed"),
+    )
+
+
+# ── Finance tables (Sprint 4) ────────────────────────────────────────────────
+
+
+class FecCommitteeCandidateRow(Base):
+    """Maps FEC committee IDs to their principal candidate ID.
+
+    Populated during ingest_fec so that aggregate_finance can link
+    raw_filings.committee_id → canonical_reps.fec_candidate_id.
+    """
+
+    __tablename__ = "fec_committee_candidates"
+
+    committee_id:      Mapped[str] = mapped_column(String(20), primary_key=True)
+    fec_candidate_id:  Mapped[str | None] = mapped_column(String(20), nullable=True)
+    committee_name:    Mapped[str | None] = mapped_column(String(500), nullable=True)
+    fetched_at:        Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    __table_args__ = (
+        Index("ix_fec_committee_candidates_fec_candidate_id", "fec_candidate_id"),
+    )
+
+
+class CanonicalRelationshipRow(Base):
+    """Aggregate financial relationship between one canonical donor and one canonical rep.
+
+    Computed by aggregate_finance from raw_filings + canonical tables.
+    This is THE aggregate root for the Finance context.
+    """
+
+    __tablename__ = "canonical_donor_rep_relationships"
+
+    id:                   Mapped[str] = mapped_column(String(26), primary_key=True)
+    donor_id:             Mapped[str] = mapped_column(
+        String(26), ForeignKey("canonical_donors.id"), nullable=False
+    )
+    rep_id:               Mapped[str] = mapped_column(
+        String(26), ForeignKey("canonical_reps.id"), nullable=False
+    )
+    total_amount_cents:   Mapped[int] = mapped_column(BigInteger, default=0)
+    contribution_count:   Mapped[int] = mapped_column(Integer, default=0)
+    first_donation_date:  Mapped[str | None] = mapped_column(String(10), nullable=True)  # ISO date
+    latest_donation_date: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    election_cycles:      Mapped[str] = mapped_column(String, default="[]")  # JSON int array
+    created_at:           Mapped[datetime] = mapped_column(DateTime, default=_now)
+    updated_at:           Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+    __table_args__ = (
+        Index("ix_canonical_rel_donor_id", "donor_id"),
+        Index("ix_canonical_rel_rep_id", "rep_id"),
+        Index(
+            "uq_canonical_rel_donor_rep",
+            "donor_id",
+            "rep_id",
+            unique=True,
+        ),
     )
 
 

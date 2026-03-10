@@ -91,6 +91,8 @@ def _fetch_and_store(cycle: int) -> int:
 
     rows_written = 0
 
+    committee_ids_seen: set[str] = set()
+
     with FECApiClient() as fec:
         with get_session() as session:
             batch: list[dict] = []
@@ -98,6 +100,8 @@ def _fetch_and_store(cycle: int) -> int:
             for record in fec.get_contributions(two_year_transaction_period=cycle):
                 filing = _map_to_domain(record)
                 batch.append(_to_row_dict(filing))
+                if filing.committee_id:
+                    committee_ids_seen.add(filing.committee_id)
 
                 if len(batch) >= 500:
                     rows_written += _upsert_batch(session, RawFilingRow, batch)
@@ -106,7 +110,55 @@ def _fetch_and_store(cycle: int) -> int:
             if batch:
                 rows_written += _upsert_batch(session, RawFilingRow, batch)
 
+        # Populate committee → candidate mapping for newly seen committee IDs
+        if committee_ids_seen:
+            _fetch_committee_candidates(fec, committee_ids_seen)
+
     return rows_written
+
+
+def _fetch_committee_candidates(fec: FECApiClient, committee_ids: set[str]) -> None:
+    """
+    Look up each committee ID on the FEC API and store committee → candidate mapping.
+    Skips committee IDs already in the database. Best-effort — failures are logged, not raised.
+    """
+    from adapters.postgres.orm_models import FecCommitteeCandidateRow
+    from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+    with get_session() as session:
+        # Only fetch IDs we haven't seen before
+        existing = {
+            row.committee_id
+            for row in session.query(FecCommitteeCandidateRow.committee_id).all()
+        }
+        new_ids = committee_ids - existing
+
+    if not new_ids:
+        return
+
+    rows: list[dict] = []
+    for cid in new_ids:
+        try:
+            committee = fec.get_committee(cid)
+            candidate_ids = committee.get("candidate_ids") or []
+            rows.append({
+                "committee_id": cid,
+                "fec_candidate_id": candidate_ids[0] if candidate_ids else None,
+                "committee_name": committee.get("name"),
+            })
+        except Exception as exc:
+            logger.warning("ingest_fec: could not fetch committee %s: %s", cid, exc)
+
+    if not rows:
+        return
+
+    with get_session() as session:
+        stmt = pg_insert(FecCommitteeCandidateRow).values(rows)
+        stmt = stmt.on_conflict_do_nothing(index_elements=["committee_id"])
+        session.execute(stmt)
+        session.commit()
+
+    logger.info("ingest_fec: stored %d committee→candidate mappings", len(rows))
 
 
 def _map_to_domain(record: dict) -> RawFiling:

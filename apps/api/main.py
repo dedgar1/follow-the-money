@@ -47,8 +47,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(rest_router, prefix="/v1")
-    app.add_route("/graphql", graphql_app)
-    app.add_websocket_route("/graphql", graphql_app)
+    app.include_router(graphql_app, prefix="/graphql")
 
     @app.get("/health", tags=["meta"])
     def health():

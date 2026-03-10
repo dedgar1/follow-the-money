@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { api, formatDollars, PARTY_LABEL, CHAMBER_LABEL } from "@/lib/api/client";
 import { PartyBadge } from "@/components/shared/PartyBadge";
+import { NetworkGraph } from "@/components/visualizations/NetworkGraph";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -20,16 +21,20 @@ export default async function DonorDetailPage({ params }: Props) {
 
   let donor: Awaited<ReturnType<typeof api.getDonor>> | null;
   let recipients: Awaited<ReturnType<typeof api.getDonorRecipients>>;
+  let network: Awaited<ReturnType<typeof api.getDonorNetwork>>;
+
   try {
-    [donor, recipients] = await Promise.all([
+    [donor, recipients, network] = await Promise.all([
       api.getDonor(id),
       api.getDonorRecipients(id),
+      api.getDonorNetwork(id).catch(() => ({ nodes: [], edges: [] })),
     ]);
   } catch (err: unknown) {
     const status = (err as { status?: number })?.status;
     if (status === 404) notFound();
     donor = null;
     recipients = [];
+    network = { nodes: [], edges: [] };
   }
 
   if (!donor) {
@@ -152,6 +157,17 @@ export default async function DonorDetailPage({ params }: Props) {
               </tbody>
             </table>
           )}
+        </section>
+
+        {/* Funding network */}
+        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Funding Network
+          </h2>
+          <p className="mb-4 text-xs text-gray-400">
+            Reps (●) funded by this donor and other donors (◆) who fund the same reps
+          </p>
+          <NetworkGraph nodes={network.nodes} edges={network.edges} />
         </section>
 
         <p className="mt-6 text-xs text-gray-400">

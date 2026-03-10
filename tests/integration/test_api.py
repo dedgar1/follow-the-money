@@ -48,7 +48,7 @@ client = TestClient(app)
 
 
 @pytest.mark.parametrize("path", [
-    "/v1/representatives/rep1/votes",
+    # /votes is implemented in Sprint 7 — returns 404 for unknown rep, not 501
     "/v1/representatives/rep1/correlations",
     "/v1/zip/90210",
     "/v1/compare?ids=rep1,rep2",
@@ -58,6 +58,12 @@ def test_unimplemented_rest_endpoints_return_501(path: str):
     response = client.get(path)
     assert response.status_code == 501
     assert "detail" in response.json()
+
+
+def test_votes_returns_404_for_unknown_rep():
+    """Sprint 7: /votes endpoint is implemented — returns 404 (not 501) for unknown rep."""
+    response = client.get("/v1/representatives/rep1/votes")
+    assert response.status_code == 404
 
 
 # ── REST — representatives (Sprint 5) ─────────────────────────────────────────

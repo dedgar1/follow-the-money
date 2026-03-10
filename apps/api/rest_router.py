@@ -7,6 +7,7 @@ Google Civic API key), compare / export (Sprint 9).
 
 from __future__ import annotations
 
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -88,6 +89,40 @@ class SearchResult(BaseModel):
     chamber: Optional[str]
     state: Optional[str]
     donor_type: Optional[str]
+
+
+class NetworkNode(BaseModel):
+    id: str
+    type: str           # "rep" or "donor"
+    label: str
+    party: Optional[str] = None
+    chamber: Optional[str] = None
+    state: Optional[str] = None
+    donor_type: Optional[str] = None
+    is_center: bool = False
+
+
+class NetworkEdge(BaseModel):
+    source: str
+    target: str
+    total_cents: int
+    cycles: list[int]
+
+
+class NetworkGraph(BaseModel):
+    nodes: list[NetworkNode]
+    edges: list[NetworkEdge]
+
+
+class VoteRecord(BaseModel):
+    vote_id: str
+    bill_id: str
+    bill_title: str
+    industries: list[str]    # Industry enum values, e.g. ["energy_natural_resources"]
+    nlp_confidence: float
+    position: str            # "yes" | "no" | "abstain" | "not_voting"
+    voted_at: str            # "YYYY-MM-DD"
+    chamber: str             # "house" | "senate"
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -201,10 +236,76 @@ def get_representative(rep_id: str, db: Session = Depends(get_db)):
     )
 
 
-@router.get("/representatives/{rep_id}/votes", summary="Get voting record")
-def get_representative_votes(rep_id: str):
-    """TODO Sprint 7: Voting record with industry tags."""
-    raise HTTPException(status_code=501, detail="Implemented in Sprint 7")
+@router.get("/representatives/{rep_id}/network", response_model=NetworkGraph, summary="Rep funding network graph")
+def get_rep_network(rep_id: str, limit: int = 15, db: Session = Depends(get_db)):
+    """2-hop network: rep → donors (hop-1) → sibling reps funded by those donors (hop-2)."""
+    rep = db.get(CanonicalRepRow, rep_id)
+    if rep is None:
+        raise HTTPException(status_code=404, detail="Representative not found")
+    try:
+        from adapters.neo4j.network_query import NetworkQueryService
+        return NetworkQueryService().get_rep_network(rep_id, direct_limit=limit)
+    except Exception:
+        return {"nodes": [], "edges": []}
+
+
+@router.get("/representatives/{rep_id}/votes", response_model=list[VoteRecord], summary="Get voting record")
+def get_representative_votes(rep_id: str, limit: int = 50, db: Session = Depends(get_db)):
+    """
+    Voting record for a representative, joined with bill industry tags.
+
+    Reads from raw_votes via the rep's bioguide_id so data is available as
+    soon as ingest_votes + classify_bills pipeline stages have run.
+    Returns up to ``limit`` most recent votes (default 50, max 200).
+    """
+    rep = db.get(CanonicalRepRow, rep_id)
+    if rep is None:
+        raise HTTPException(status_code=404, detail="Representative not found")
+
+    if not rep.bioguide_id:
+        return []
+
+    limit = min(limit, 200)
+    rows = db.execute(
+        text("""
+            SELECT rv.id, rv.bill_id, rv.bill_title, rv.position,
+                   rv.voted_at, rv.chamber,
+                   b.industries, b.nlp_confidence
+            FROM raw_votes rv
+            LEFT JOIN bills b ON b.congress_gov_id = rv.bill_id
+            WHERE rv.member_bioguide_id = :bioguide_id
+            ORDER BY rv.voted_at DESC
+            LIMIT :limit
+        """),
+        {"bioguide_id": rep.bioguide_id, "limit": limit},
+    ).fetchall()
+
+    return [_vote_record_from_row(row) for row in rows]
+
+
+_POSITION_NORM: dict[str, str] = {
+    "Yea": "yes", "Yes": "yes", "AYE": "yes",
+    "Nay": "no", "No": "no", "NAY": "no",
+    "Not Voting": "not_voting",
+    "Present": "abstain", "Abstain": "abstain",
+}
+
+
+def _vote_record_from_row(row) -> VoteRecord:
+    try:
+        industries = json.loads(row[6] or "[]")
+    except (json.JSONDecodeError, TypeError):
+        industries = []
+    return VoteRecord(
+        vote_id=str(row[0]),
+        bill_id=str(row[1] or ""),
+        bill_title=str(row[2] or "Unknown bill"),
+        industries=industries,
+        nlp_confidence=float(row[7] or 0.0),
+        position=_POSITION_NORM.get(str(row[3]), str(row[3]).lower()),
+        voted_at=str(row[4])[:10] if row[4] else "",
+        chamber=str(row[5] or "").lower(),
+    )
 
 
 @router.get("/representatives/{rep_id}/correlations", summary="Get alignment scores")
@@ -242,6 +343,19 @@ def get_donor(donor_id: str, db: Session = Depends(get_db)):
         state=donor.state,
         total_given_cents=total_given_cents,
     )
+
+
+@router.get("/donors/{donor_id}/network", response_model=NetworkGraph, summary="Donor funding network graph")
+def get_donor_network(donor_id: str, limit: int = 15, db: Session = Depends(get_db)):
+    """2-hop network: donor → reps (hop-1) → sibling donors who also fund those reps (hop-2)."""
+    donor = db.get(CanonicalDonorRow, donor_id)
+    if donor is None:
+        raise HTTPException(status_code=404, detail="Donor not found")
+    try:
+        from adapters.neo4j.network_query import NetworkQueryService
+        return NetworkQueryService().get_donor_network(donor_id, direct_limit=limit)
+    except Exception:
+        return {"nodes": [], "edges": []}
 
 
 @router.get("/donors/{donor_id}/recipients", response_model=list[DonorRecipient], summary="List reps funded by donor")

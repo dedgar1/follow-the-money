@@ -171,19 +171,24 @@ def _resolve_donors() -> tuple[int, int]:
 
     logger.info("resolve_identities: resolving %d unprocessed filings", len(unprocessed))
 
-    # Phase 1: cluster all donor names with rapidfuzz
+    # Phase 1: cluster all donor names with rapidfuzz, tracking filing→cluster
     name_resolver = DonorNameResolver()
+    filing_cluster_map: dict[str, object] = {}  # filing.id → DonorCluster
     for filing in unprocessed:
-        name_resolver.add(filing.contributor_name, fec_id=filing.committee_id)
+        cluster = name_resolver.add(filing.contributor_name, fec_id=filing.committee_id)
+        filing_cluster_map[filing.id] = cluster
 
     clusters = name_resolver.clusters
     logger.info("resolve_identities: %d name clusters from %d filings", len(clusters), len(unprocessed))
 
-    # Phase 2: upsert canonical_donors and mark filings processed
+    # Phase 2: upsert canonical_donors, mark filings processed, link canonical_donor_id
     donors_created = 0
     with get_session() as session:
         repo = PostgresIdentityRepository(session)
         resolver = EntityResolver(repo)
+
+        # cluster object id → canonical_donor_id string
+        cluster_to_donor_id: dict[int, str] = {}
 
         for cluster in clusters:
             # Use the first FEC ID as the primary key for lookup
@@ -194,16 +199,20 @@ def _resolve_donors() -> tuple[int, int]:
                 fec_id=primary_fec_id,
             )
             donors_created += 1
+            cluster_to_donor_id[id(cluster)] = str(donor.id)
 
             # Merge any additional FEC IDs into this canonical donor
             for extra_fec_id in cluster.fec_ids[1:]:
                 resolver.merge_donor_fec_id(donor, extra_fec_id)
 
-        # Mark filings as processed
-        filing_ids = [f.id for f in unprocessed]
-        session.query(RawFilingRow).filter(
-            RawFilingRow.id.in_(filing_ids)
-        ).update({"is_processed": True}, synchronize_session=False)
+        # Mark filings as processed and link to canonical donor
+        for filing in unprocessed:
+            cluster = filing_cluster_map[filing.id]
+            donor_id = cluster_to_donor_id.get(id(cluster))
+            row = session.get(RawFilingRow, filing.id)
+            if row is not None:
+                row.is_processed = True
+                row.canonical_donor_id = donor_id
         session.commit()
 
     return donors_created, len(unprocessed)

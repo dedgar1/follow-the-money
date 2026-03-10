@@ -47,7 +47,7 @@ class CanonicalRep:
     chamber:           Chamber
     state:             str           # 2-letter state code
     district:          str | None    # e.g. "CA-12" (None for Senate)
-    bioguide_id:       str | None    # ProPublica / Congress.gov identifier
+    bioguide_id:       str | None    # Congress.gov identifier
     fec_candidate_id:  str | None    # FEC identifier
 
     def __post_init__(self) -> None:

@@ -47,7 +47,7 @@ A correlation is only surfaced to users when ALL of the following are true:
 
 - **Contributions**: FEC API (federal election filings)
 - **Industry categories**: OpenSecrets taxonomy
-- **Votes**: ProPublica Congress API
+- **Votes**: Congress.gov API v3 (House) · Senate.gov XML feeds (Senate)
 - **Bill industry tagging**: spaCy NLP + keyword taxonomy
 
 *Last updated: Sprint 8 (TBD)*

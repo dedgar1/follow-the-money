@@ -1,7 +1,7 @@
 """
 Voting record service.
 
-TODO Sprint 7: Implement VotingRecordService with ProPublica data + NLP tagging.
+TODO Sprint 7: Implement VotingRecordService with Congress.gov data + NLP tagging.
 """
 
 from __future__ import annotations

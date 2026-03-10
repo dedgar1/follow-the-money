@@ -255,7 +255,7 @@ def test_bill_defaults():
     assert bill.industries == []
     assert bill.nlp_confidence == 0.0
     assert bill.congress is None
-    assert bill.propublica_id is None
+    assert bill.congress_gov_id is None
 
 
 def test_bill_ref_is_frozen():

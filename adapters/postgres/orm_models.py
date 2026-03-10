@@ -21,8 +21,10 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     String,
     Text,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -143,7 +145,7 @@ class BillRow(Base):
     industries:      Mapped[str] = mapped_column(Text, default="[]")  # JSON array
     nlp_confidence:  Mapped[float] = mapped_column(Float, default=0.0)
     congress:        Mapped[int | None] = mapped_column(Integer, nullable=True)
-    propublica_id:   Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True)
+    congress_gov_id: Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True)
     created_at:      Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     votes: Mapped[list[VoteRow]] = relationship(back_populates="bill")
@@ -171,4 +173,68 @@ class VoteRow(Base):
         Index("ix_votes_bill_id", "bill_id"),
         Index("ix_votes_representative_id", "representative_id"),
         Index("ix_votes_voted_at", "voted_at"),
+    )
+
+
+# ── Raw ingestion tables (Sprint 2) ──────────────────────────────────────────
+# These tables are IMMUTABLE — rows are never updated after insert.
+# They hold verbatim API payloads; canonical tables are built from them downstream.
+
+
+class RawFilingRow(Base):
+    """Raw FEC Schedule A contribution filing — one row per FEC transaction."""
+
+    __tablename__ = "raw_filings"
+
+    id:                    Mapped[str] = mapped_column(String(26), primary_key=True)
+    source:                Mapped[str] = mapped_column(String(20), nullable=False, default="fec_api")
+    source_id:             Mapped[str] = mapped_column(String(100), nullable=False)
+    committee_id:          Mapped[str] = mapped_column(String(50), default="")
+    contributor_name:      Mapped[str] = mapped_column(String(500), default="")
+    contributor_employer:  Mapped[str] = mapped_column(String(500), default="")
+    contributor_occupation: Mapped[str] = mapped_column(String(500), default="")
+    contributor_state:     Mapped[str] = mapped_column(String(2), default="")
+    amount_cents:          Mapped[int] = mapped_column(BigInteger, default=0)
+    contribution_date:     Mapped[str] = mapped_column(String(10), default="")
+    election_cycle:        Mapped[int] = mapped_column(Integer, default=0)
+    payload:               Mapped[dict] = mapped_column(JSON, default=dict)
+    fetched_at:            Mapped[datetime] = mapped_column(DateTime, default=_now)
+    is_processed:          Mapped[bool] = mapped_column(Boolean, default=False)
+
+    __table_args__ = (
+        UniqueConstraint("source", "source_id", name="uq_raw_filings_source_source_id"),
+        Index("ix_raw_filings_election_cycle", "election_cycle"),
+        Index("ix_raw_filings_committee_id", "committee_id"),
+        Index("ix_raw_filings_is_processed", "is_processed"),
+    )
+
+
+class RawVoteRow(Base):
+    """Raw roll-call vote — one row per (member, roll_call). Source: congress_api or senate_xml."""
+
+    __tablename__ = "raw_votes"
+
+    id:                   Mapped[str] = mapped_column(String(26), primary_key=True)
+    source:               Mapped[str] = mapped_column(String(20), nullable=False, default="congress_api")
+    source_id:            Mapped[str] = mapped_column(String(300), nullable=False)
+    congress:             Mapped[int] = mapped_column(Integer, default=0)
+    session:              Mapped[int] = mapped_column(Integer, default=1)
+    chamber:              Mapped[str] = mapped_column(String(10), default="")
+    roll_call:            Mapped[int] = mapped_column(Integer, default=0)
+    bill_id:              Mapped[str] = mapped_column(String(50), default="")
+    bill_title:           Mapped[str] = mapped_column(Text, default="")
+    member_bioguide_id:   Mapped[str] = mapped_column(String(20), default="")
+    member_name:          Mapped[str] = mapped_column(String(255), default="")
+    position:             Mapped[str] = mapped_column(String(20), default="")
+    voted_at:             Mapped[str] = mapped_column(String(10), default="")
+    payload:              Mapped[dict] = mapped_column(JSON, default=dict)
+    fetched_at:           Mapped[datetime] = mapped_column(DateTime, default=_now)
+    is_processed:         Mapped[bool] = mapped_column(Boolean, default=False)
+
+    __table_args__ = (
+        # One position per (member, roll_call) — deduplicate on re-ingestion
+        UniqueConstraint("source_id", "member_bioguide_id", name="uq_raw_votes_source_member"),
+        Index("ix_raw_votes_congress", "congress"),
+        Index("ix_raw_votes_member_bioguide_id", "member_bioguide_id"),
+        Index("ix_raw_votes_is_processed", "is_processed"),
     )

@@ -146,6 +146,9 @@ services:
       - ../..:/app
       - web_node_modules:/app/apps/web/node_modules
     environment:
+      # API_URL: server-side (Node.js in container) → Docker service name
+      API_URL: http://api:8000
+      # NEXT_PUBLIC_API_URL: browser JS → host machine address
       NEXT_PUBLIC_API_URL: http://localhost:8000
     depends_on:
       - api

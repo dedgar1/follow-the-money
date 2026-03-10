@@ -7,7 +7,11 @@ in domain/*/models.py. Mapping between them happens in repository adapters.
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
 
 from sqlalchemy import (
     BigInteger,
@@ -38,9 +42,9 @@ class RepresentativeRow(Base):
     district:          Mapped[str | None] = mapped_column(String(10), nullable=True)
     bioguide_id:       Mapped[str | None] = mapped_column(String(20), nullable=True, unique=True)
     fec_candidate_id:  Mapped[str | None] = mapped_column(String(20), nullable=True, unique=True)
-    created_at:        Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at:        Mapped[datetime] = mapped_column(DateTime, default=_now)
     updated_at:        Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=_now, onupdate=_now
     )
 
     contributions: Mapped[list[ContributionRow]] = relationship(
@@ -63,9 +67,9 @@ class DonorRow(Base):
     donor_type: Mapped[str] = mapped_column(String(20), nullable=False)
     industry:   Mapped[str | None] = mapped_column(String(50), nullable=True)
     state:      Mapped[str | None] = mapped_column(String(2), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=_now)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=_now, onupdate=_now
     )
 
     contributions: Mapped[list[ContributionRow]] = relationship(back_populates="donor")
@@ -88,7 +92,7 @@ class ContributionRow(Base):
     election_cycle:    Mapped[int] = mapped_column(Integer, nullable=False)
     contribution_type: Mapped[str] = mapped_column(String(20), nullable=False)
     fec_filing_id:     Mapped[str | None] = mapped_column(String(50), nullable=True)
-    created_at:        Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at:        Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     donor:          Mapped[DonorRow] = relationship(back_populates="contributions")
     representative: Mapped[RepresentativeRow] = relationship(back_populates="contributions")
@@ -114,9 +118,9 @@ class RelationshipRow(Base):
     total_amount_cents:   Mapped[int] = mapped_column(BigInteger, default=0)
     first_donation_date:  Mapped[date | None] = mapped_column(nullable=True)
     latest_donation_date: Mapped[date | None] = mapped_column(nullable=True)
-    created_at:           Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at:           Mapped[datetime] = mapped_column(DateTime, default=_now)
     updated_at:           Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=_now, onupdate=_now
     )
 
     __table_args__ = (
@@ -140,7 +144,7 @@ class BillRow(Base):
     nlp_confidence:  Mapped[float] = mapped_column(Float, default=0.0)
     congress:        Mapped[int | None] = mapped_column(Integer, nullable=True)
     propublica_id:   Mapped[str | None] = mapped_column(String(50), nullable=True, unique=True)
-    created_at:      Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at:      Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     votes: Mapped[list[VoteRow]] = relationship(back_populates="bill")
 
@@ -158,7 +162,7 @@ class VoteRow(Base):
     position:          Mapped[str] = mapped_column(String(15), nullable=False)
     voted_at:          Mapped[datetime] = mapped_column(DateTime, nullable=False)
     vote_type:         Mapped[str] = mapped_column(String(15), default="floor")
-    created_at:        Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at:        Mapped[datetime] = mapped_column(DateTime, default=_now)
 
     bill:           Mapped[BillRow] = relationship(back_populates="votes")
     representative: Mapped[RepresentativeRow] = relationship(back_populates="votes")

@@ -33,6 +33,10 @@ def make_celery() -> Celery:
             "task": "pipeline.tasks.ingest_fec.run",
             "schedule": crontab(hour=2, minute=0),
         },
+        "nightly-ingest-votes": {
+            "task": "pipeline.tasks.ingest_votes.run",
+            "schedule": crontab(hour=2, minute=15),  # 15 min after FEC ingest starts
+        },
     }
     # Auto-discover tasks in pipeline.tasks.*
     app.autodiscover_tasks(["pipeline.tasks"])

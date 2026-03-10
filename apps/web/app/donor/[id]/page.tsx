@@ -18,8 +18,8 @@ const DONOR_TYPE_LABEL: Record<string, string> = {
 export default async function DonorDetailPage({ params }: Props) {
   const { id } = await params;
 
-  let donor;
-  let recipients;
+  let donor: Awaited<ReturnType<typeof api.getDonor>> | null;
+  let recipients: Awaited<ReturnType<typeof api.getDonorRecipients>>;
   try {
     [donor, recipients] = await Promise.all([
       api.getDonor(id),

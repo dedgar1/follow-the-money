@@ -27,9 +27,11 @@ sys.path.insert(0, __file__.rsplit("/infrastructure", 1)[0])
 
 from adapters.postgres.orm_models import (
     Base,
+    BillRow,
     CanonicalDonorRow,
     CanonicalRelationshipRow,
     CanonicalRepRow,
+    RawVoteRow,
 )
 from infrastructure.database import engine, get_session
 
@@ -173,6 +175,156 @@ RELATIONSHIPS = [
 ]
 
 
+# ── Bills (Sprint 7) ──────────────────────────────────────────────────────────
+# 15 representative bills across the major industry categories.
+
+BILLS = [
+    dict(id="BILL001", title="American Clean Energy Act", industries='["energy_natural_resources"]',
+         nlp_confidence=0.85, congress=119, congress_gov_id="hr1001"),
+    dict(id="BILL002", title="Wall Street Reform and Consumer Protection Enhancement Act",
+         industries='["finance_insurance_real_estate"]', nlp_confidence=0.88,
+         congress=119, congress_gov_id="hr1002"),
+    dict(id="BILL003", title="Affordable Health Care Improvement Act",
+         industries='["health"]', nlp_confidence=0.90, congress=119, congress_gov_id="hr1003"),
+    dict(id="BILL004", title="National Defense Authorization Act for Fiscal Year 2025",
+         industries='["defense"]', nlp_confidence=0.92, congress=119, congress_gov_id="hr1004"),
+    dict(id="BILL005", title="Farm Bill Agricultural Support and Rural Development Act",
+         industries='["agriculture"]', nlp_confidence=0.87, congress=119, congress_gov_id="s1001"),
+    dict(id="BILL006", title="Broadband Access and Net Neutrality Restoration Act",
+         industries='["communications_electronics"]', nlp_confidence=0.83,
+         congress=119, congress_gov_id="hr1006"),
+    dict(id="BILL007", title="Highway Infrastructure and Transportation Investment Act",
+         industries='["transportation"]', nlp_confidence=0.86, congress=119, congress_gov_id="hr1007"),
+    dict(id="BILL008", title="Minimum Wage and Worker Protection Act",
+         industries='["labor"]', nlp_confidence=0.91, congress=119, congress_gov_id="hr1008"),
+    dict(id="BILL009", title="Prescription Drug Pricing Transparency Act",
+         industries='["health"]', nlp_confidence=0.89, congress=119, congress_gov_id="s1002"),
+    dict(id="BILL010", title="Pipeline Safety and Oil Spill Prevention Act",
+         industries='["energy_natural_resources"]', nlp_confidence=0.84,
+         congress=119, congress_gov_id="hr1010"),
+    dict(id="BILL011", title="Mortgage Relief and Housing Finance Reform Act",
+         industries='["finance_insurance_real_estate"]', nlp_confidence=0.82,
+         congress=119, congress_gov_id="hr1011"),
+    dict(id="BILL012", title="Criminal Justice Reform and Sentencing Guidelines Act",
+         industries='["lawyers_lobbyists"]', nlp_confidence=0.79,
+         congress=119, congress_gov_id="s1003"),
+    dict(id="BILL013", title="Military Veterans Benefits Expansion Act",
+         industries='["defense"]', nlp_confidence=0.88, congress=119, congress_gov_id="hr1013"),
+    dict(id="BILL014", title="Medicare Advantage Modernization Act",
+         industries='["health"]', nlp_confidence=0.91, congress=119, congress_gov_id="s1004"),
+    dict(id="BILL015", title="Cybersecurity and Data Privacy Protection Act",
+         industries='["communications_electronics"]', nlp_confidence=0.85,
+         congress=119, congress_gov_id="hr1015"),
+]
+
+# ── Vote seed data (raw_votes) ─────────────────────────────────────────────────
+# Format: (source_id, member_bioguide_id, member_name, bill_id, position, voted_at, chamber)
+# Unique constraint: (source_id, member_bioguide_id)
+
+def _build_votes() -> list[dict]:
+    """Generate a realistic set of ~90 vote records for 12 House reps."""
+    from ulid import ULID
+
+    # (roll_call, bill_congress_gov_id, date, chamber)
+    house_votes = [
+        (1,  "hr1001", "2025-01-20", "House"),
+        (2,  "hr1002", "2025-01-22", "House"),
+        (3,  "hr1003", "2025-01-28", "House"),
+        (4,  "hr1004", "2025-02-05", "House"),
+        (5,  "hr1006", "2025-02-12", "House"),
+        (6,  "hr1007", "2025-02-18", "House"),
+        (7,  "hr1008", "2025-02-26", "House"),
+        (8,  "hr1010", "2025-03-04", "House"),
+        (9,  "hr1011", "2025-03-10", "House"),
+        (10, "hr1013", "2025-03-18", "House"),
+        (11, "hr1015", "2025-03-24", "House"),
+    ]
+    senate_votes = [
+        (101, "s1001", "2025-01-23", "Senate"),
+        (102, "s1002", "2025-02-06", "Senate"),
+        (103, "s1003", "2025-02-27", "Senate"),
+        (104, "s1004", "2025-03-13", "Senate"),
+    ]
+
+    # (bioguide_id, member_name, party)
+    house_members = [
+        ("V000001", "Maria Elena Vasquez",  "D"),
+        ("W000002", "James T. Whitfield",   "D"),
+        ("C000003", "Priya Chandrasekaran", "D"),
+        ("N000004", "Robert L. Nguyen",     "D"),
+        ("K000005", "Sandra Kowalski",      "D"),
+        ("H000011", "Bradley J. Harmon",    "R"),
+        ("W000012", "Patricia Weston",      "R"),
+        ("S000013", "Carl R. Stanton",      "R"),
+        ("P000014", "Meredith A. Pruitt",   "R"),
+        ("M000015", "Douglas McAllister",   "R"),
+    ]
+    senate_members = [
+        ("D000019", "Eleanor H. Davenport", "D"),
+        ("J000020", "Marcus T. Jefferson",  "D"),
+        ("B000023", "Randall T. Boone",     "R"),
+        ("S000024", "Constance M. Shields", "R"),
+    ]
+
+    # Simulate realistic voting patterns:
+    #   D reps: YES on clean energy, labor, health; NO on defense expansion
+    #   R reps: YES on defense, energy (oil); NO on min wage, broadband
+    def _position(party: str, bill_id: str) -> str:
+        d_yes = {"hr1001", "hr1003", "hr1006", "hr1007", "hr1008", "hr1015", "s1002", "s1004"}
+        r_yes = {"hr1004", "hr1010", "hr1013", "hr1002", "hr1011"}
+        if party == "D":
+            return "Yea" if bill_id in d_yes else "Nay"
+        else:
+            return "Yea" if bill_id in r_yes else "Nay"
+
+    rows = []
+    for roll_call, bill_id, voted_at, chamber in house_votes:
+        source_id = f"house/119/1/{roll_call}"
+        # Look up the bill title from BILLS list
+        bill_title = next((b["title"] for b in BILLS if b["congress_gov_id"] == bill_id), bill_id)
+        for bioguide_id, member_name, party in house_members:
+            rows.append(dict(
+                id=str(ULID()),
+                source="congress_api",
+                source_id=source_id,
+                congress=119,
+                session=1,
+                chamber=chamber,
+                roll_call=roll_call,
+                bill_id=bill_id,
+                bill_title=bill_title,
+                member_bioguide_id=bioguide_id,
+                member_name=member_name,
+                position=_position(party, bill_id),
+                voted_at=voted_at,
+                payload={},
+                is_processed=False,
+            ))
+
+    for roll_call, bill_id, voted_at, chamber in senate_votes:
+        source_id = f"senate/119/1/{roll_call}"
+        bill_title = next((b["title"] for b in BILLS if b["congress_gov_id"] == bill_id), bill_id)
+        for bioguide_id, member_name, party in senate_members:
+            rows.append(dict(
+                id=str(ULID()),
+                source="senate_xml",
+                source_id=source_id,
+                congress=119,
+                session=1,
+                chamber=chamber,
+                roll_call=roll_call,
+                bill_id=bill_id,
+                bill_title=bill_title,
+                member_bioguide_id=bioguide_id,
+                member_name=member_name,
+                position=_position(party, bill_id),
+                voted_at=voted_at,
+                payload={},
+                is_processed=False,
+            ))
+    return rows
+
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
@@ -190,6 +342,7 @@ def _reset(session) -> None:
     rel_ids = [_rel_id(d, r) for d, r, *_ in RELATIONSHIPS]
     rep_ids = [r["id"] for r in REPS]
     donor_ids = [d["id"] for d in DONORS]
+    bill_ids = [b["id"] for b in BILLS]
     if rel_ids:
         session.execute(
             text("DELETE FROM canonical_donor_rep_relationships WHERE id = ANY(:ids)"),
@@ -204,6 +357,15 @@ def _reset(session) -> None:
         session.execute(
             text("DELETE FROM canonical_donors WHERE id = ANY(:ids)"),
             {"ids": donor_ids},
+        )
+    # Delete raw_votes by source pattern and bills by id
+    session.execute(
+        text("DELETE FROM raw_votes WHERE source_id LIKE 'house/119/1/%' OR source_id LIKE 'senate/119/1/%'"),
+    )
+    if bill_ids:
+        session.execute(
+            text("DELETE FROM bills WHERE id = ANY(:ids)"),
+            {"ids": bill_ids},
         )
 
 
@@ -249,6 +411,31 @@ def _seed_postgres(session) -> None:
         ))
         inserted_rels += 1
     log.info(f"  Relationships: {inserted_rels} inserted ({len(RELATIONSHIPS) - inserted_rels} already existed)")
+
+    # Bills (Sprint 7)
+    inserted_bills = 0
+    for b in BILLS:
+        existing = session.get(BillRow, b["id"])
+        if existing:
+            continue
+        session.add(BillRow(**b))
+        inserted_bills += 1
+    log.info(f"  Bills: {inserted_bills} inserted ({len(BILLS) - inserted_bills} already existed)")
+    session.flush()
+
+    # Raw votes (Sprint 7)
+    vote_rows = _build_votes()
+    inserted_votes = 0
+    for v in vote_rows:
+        existing = session.execute(
+            text("SELECT 1 FROM raw_votes WHERE source_id = :sid AND member_bioguide_id = :bio"),
+            {"sid": v["source_id"], "bio": v["member_bioguide_id"]},
+        ).fetchone()
+        if existing:
+            continue
+        session.add(RawVoteRow(**v))
+        inserted_votes += 1
+    log.info(f"  Votes: {inserted_votes} inserted ({len(vote_rows) - inserted_votes} already existed)")
 
 
 def _seed_neo4j() -> None:
@@ -312,10 +499,13 @@ def main() -> None:
     log.info("\nSeeding Neo4j…")
     _seed_neo4j()
 
+    vote_count = len(_build_votes())
     log.info("\nDone. Summary:")
     log.info(f"  {len(REPS)} representatives")
     log.info(f"  {len(DONORS)} donors")
     log.info(f"  {len(RELATIONSHIPS)} funding relationships")
+    log.info(f"  {len(BILLS)} bills")
+    log.info(f"  {vote_count} raw vote records")
     log.info("\nOpen http://localhost:3000 to view the UI.")
 
 

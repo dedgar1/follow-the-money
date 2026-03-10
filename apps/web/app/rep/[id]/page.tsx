@@ -1,25 +1,53 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { api, formatDollars, CHAMBER_LABEL } from "@/lib/api/client";
+import type { VoteRecord } from "@/lib/api/client";
 import { PartyBadge } from "@/components/shared/PartyBadge";
 import { DonutChart } from "@/components/visualizations/DonutChart";
 import { TopDonorsBar } from "@/components/visualizations/TopDonorsBar";
+import { NetworkGraph } from "@/components/visualizations/NetworkGraph";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
+function VoteBadge({ position }: { position: string }) {
+  const styles: Record<string, string> = {
+    yes:        "bg-green-100 text-green-700",
+    no:         "bg-red-100 text-red-700",
+    abstain:    "bg-yellow-100 text-yellow-700",
+    not_voting: "bg-gray-100 text-gray-500",
+  };
+  const labels: Record<string, string> = {
+    yes: "Yes", no: "No", abstain: "Abstain", not_voting: "Not Voting",
+  };
+  const cls = styles[position] ?? "bg-gray-100 text-gray-500";
+  return (
+    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${cls}`}>
+      {labels[position] ?? position}
+    </span>
+  );
+}
+
 export default async function RepProfilePage({ params }: Props) {
   const { id } = await params;
 
-  let rep;
+  let rep: Awaited<ReturnType<typeof api.getRepresentative>> | null;
+  let network: Awaited<ReturnType<typeof api.getRepNetwork>>;
+  let votes: VoteRecord[];
+
   try {
-    rep = await api.getRepresentative(id);
+    [rep, network, votes] = await Promise.all([
+      api.getRepresentative(id),
+      api.getRepNetwork(id).catch(() => ({ nodes: [], edges: [] })),
+      api.getRepVotes(id).catch(() => []),
+    ]);
   } catch (err: unknown) {
     const status = (err as { status?: number })?.status;
     if (status === 404) notFound();
-    // API down — show empty state rather than crash
     rep = null;
+    network = { nodes: [], edges: [] };
+    votes = [];
   }
 
   if (!rep) {
@@ -105,13 +133,75 @@ export default async function RepProfilePage({ params }: Props) {
           </section>
         </div>
 
+        {/* Funding network */}
+        <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500">
+            Funding Network
+          </h2>
+          <p className="mb-4 text-xs text-gray-400">
+            Donors (◆) who fund this rep and other reps funded by those same donors
+          </p>
+          <NetworkGraph nodes={network.nodes} edges={network.edges} />
+        </section>
+
+        {/* Voting record */}
+        <section className="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 px-6 py-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Voting Record ({votes.length})
+            </h2>
+          </div>
+
+          {votes.length === 0 ? (
+            <div className="px-6 py-12 text-center text-sm text-gray-400">
+              No vote data available — run the ingest pipeline to populate.
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500">
+                  <th className="px-6 py-3 text-left font-medium">Bill</th>
+                  <th className="px-6 py-3 text-left font-medium">Industry</th>
+                  <th className="px-6 py-3 text-center font-medium">Vote</th>
+                  <th className="px-6 py-3 text-right font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {votes.map((v) => (
+                  <tr key={v.vote_id} className="hover:bg-gray-50">
+                    <td className="px-6 py-3 max-w-xs">
+                      <span className="font-medium text-gray-800">{v.bill_title}</span>
+                      {v.bill_id && (
+                        <span className="ml-2 text-xs text-gray-400 uppercase">{v.bill_id}</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-3">
+                      {v.industries.length > 0 ? (
+                        <span className="inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600 capitalize">
+                          {v.industries[0].replace(/_/g, " ")}
+                        </span>
+                      ) : (
+                        <span className="text-gray-300 text-xs">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <VoteBadge position={v.position} />
+                    </td>
+                    <td className="px-6 py-3 text-right text-gray-500">{v.voted_at}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
         {/* Coming soon placeholders */}
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div className="rounded-lg border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
-            Voting record — Sprint 7
+            Donor alignment correlations — Sprint 8
           </div>
           <div className="rounded-lg border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
-            Donor alignment correlations — Sprint 8
+            Side-by-side comparison — Sprint 9
           </div>
         </div>
 

@@ -200,6 +200,9 @@ class RawFilingRow(Base):
     payload:               Mapped[dict] = mapped_column(JSON, default=dict)
     fetched_at:            Mapped[datetime] = mapped_column(DateTime, default=_now)
     is_processed:          Mapped[bool] = mapped_column(Boolean, default=False)
+    # True when the contribution is associated with a foreign-connected PAC
+    # (identified during ingest by cross-referencing FARA registrations)
+    foreign_connected:     Mapped[bool] = mapped_column(Boolean, default=False)
     # Set by resolve_identities (Sprint 3) — links filing to its canonical donor
     canonical_donor_id:    Mapped[str | None] = mapped_column(
         String(26), ForeignKey("canonical_donors.id"), nullable=True

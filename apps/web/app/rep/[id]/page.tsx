@@ -207,6 +207,7 @@ export default async function RepProfilePage({ params }: Props) {
           repName={rep.full_name}
           totalRaisedCents={rep.total_raised_cents}
           smallDonorCents={rep.small_donor_cents ?? 0}
+          foreignConnectedCents={rep.foreign_connected_cents ?? 0}
           industries={rep.top_industries}
           donors={rep.top_donors}
           network={network}

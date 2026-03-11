@@ -17,6 +17,7 @@ interface Props {
   repName: string;
   totalRaisedCents: number;
   smallDonorCents: number;
+  foreignConnectedCents: number;
   industries: IndustrySummary[];
   donors: TopDonorSummary[];
   network: { nodes: NetworkNode[]; edges: NetworkEdge[] };
@@ -28,6 +29,7 @@ export function VizPanel({
   repName,
   totalRaisedCents,
   smallDonorCents,
+  foreignConnectedCents,
   industries,
   donors,
   network,
@@ -131,8 +133,11 @@ export function VizPanel({
             note={smallDonorCents === 0 ? "no data" : undefined}
           />
           <FundingBreakdownRow label="PAC Contributions" value={formatDollars(totalRaisedCents)} />
-          {/* TODO Sprint 12: Foreign-Connected PAC requires OpenSecrets API */}
-          <FundingBreakdownRow label="Foreign-Connected" value="—" note="requires OpenSecrets" />
+          <FundingBreakdownRow
+            label="Foreign-Connected"
+            value={foreignConnectedCents > 0 ? formatDollars(foreignConnectedCents) : "—"}
+            note={foreignConnectedCents === 0 ? "no data" : undefined}
+          />
         </div>
 
         {/* Top Donors */}

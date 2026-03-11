@@ -65,6 +65,7 @@ class RepProfile(BaseModel):
     bioguide_id: Optional[str]
     total_raised_cents: int
     small_donor_cents: int
+    foreign_connected_cents: int
     top_industries: list[IndustrySummary]
     top_donors: list[TopDonorSummary]
 
@@ -245,6 +246,20 @@ def get_representative(rep_id: str, db: Session = Depends(get_db)):
         or 0
     )
 
+    # Foreign-connected: filings explicitly flagged during ingest
+    foreign_connected_cents = int(
+        db.execute(
+            text("""
+                SELECT COALESCE(SUM(rf.amount_cents), 0)
+                FROM raw_filings rf
+                JOIN canonical_donor_rep_relationships dr ON dr.donor_id = rf.canonical_donor_id
+                WHERE dr.rep_id = :rep_id AND rf.foreign_connected = true
+            """),
+            {"rep_id": rep_id},
+        ).scalar()
+        or 0
+    )
+
     return RepProfile(
         id=rep.id,
         full_name=rep.full_name,
@@ -255,6 +270,7 @@ def get_representative(rep_id: str, db: Session = Depends(get_db)):
         bioguide_id=rep.bioguide_id,
         total_raised_cents=total_raised_cents,
         small_donor_cents=small_donor_cents,
+        foreign_connected_cents=foreign_connected_cents,
         top_industries=[
             IndustrySummary(industry=row[0], total_cents=int(row[1]))
             for row in industry_rows

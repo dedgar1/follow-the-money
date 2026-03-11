@@ -1,6 +1,6 @@
 COMPOSE = docker compose -f infrastructure/docker/docker-compose.yml
 
-.PHONY: dev stop up up-d down build logs seed test lint codegen
+.PHONY: dev stop reload rebuild up up-d down build logs seed seed-reset test lint codegen
 
 # ── Primary commands ──────────────────────────────────────────────────────────
 
@@ -26,6 +26,27 @@ dev:
 	@echo "  Flower    →  http://localhost:5555"
 	@echo ""
 	@echo "  Run 'make stop' to shut down."
+
+## Reload code changes into the running dev stack.
+##
+## The API (uvicorn --reload) and frontend (Next.js HMR) pick up changes
+## automatically — only the Celery worker needs an explicit restart.
+## Use this after editing pipeline tasks or any other worker code.
+reload:
+	@echo "Restarting Celery worker and beat…"
+	@$(COMPOSE) restart worker beat
+	@echo "Done. API and frontend are already live-reloading."
+
+## Rebuild Docker images then restart all services.
+##
+## Use this after adding/removing Python packages (pyproject.toml) or
+## npm packages (package.json).  Leaves data volumes intact.
+rebuild:
+	@echo "Rebuilding images…"
+	@$(COMPOSE) build
+	@echo "Restarting services…"
+	@$(COMPOSE) up -d
+	@echo "Done."
 
 ## Stop and remove all containers (data volumes are preserved).
 stop:

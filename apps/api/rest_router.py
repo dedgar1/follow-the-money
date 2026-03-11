@@ -308,10 +308,66 @@ def _vote_record_from_row(row) -> VoteRecord:
     )
 
 
-@router.get("/representatives/{rep_id}/correlations", summary="Get alignment scores")
-def get_representative_correlations(rep_id: str):
-    """TODO Sprint 8: AlignmentScore list with shift and confidence."""
-    raise HTTPException(status_code=501, detail="Implemented in Sprint 8")
+class AlignmentScoreResponse(BaseModel):
+    id: str
+    industry: str
+    score: float
+    confidence: str          # "low" | "medium" | "high"
+    evidence_count: int
+    before_score: float
+    after_score: float
+    shift: float             # positive = more aligned after donation
+    p_value: float
+    methodology_url: str
+    computed_at: Optional[str]
+
+
+@router.get(
+    "/representatives/{rep_id}/correlations",
+    response_model=list[AlignmentScoreResponse],
+    summary="Get alignment scores",
+)
+def get_representative_correlations(rep_id: str, db: Session = Depends(get_db)):
+    """
+    Donor-industry alignment scores for a representative.
+
+    Returns all AlignmentScores computed by the correlation pipeline for
+    this rep, ordered by absolute shift magnitude (largest first).
+
+    Only scores that passed all significance thresholds are stored:
+      - evidence_count >= 5
+      - |shift| >= 0.15
+      - p_value < 0.05
+    """
+    from adapters.postgres.orm_models import AlignmentScoreRow
+
+    rep = db.get(CanonicalRepRow, rep_id)
+    if rep is None:
+        raise HTTPException(status_code=404, detail="Representative not found")
+
+    rows = (
+        db.query(AlignmentScoreRow)
+        .filter_by(rep_id=rep_id)
+        .order_by(AlignmentScoreRow.shift.desc())
+        .all()
+    )
+
+    return [
+        AlignmentScoreResponse(
+            id=row.id,
+            industry=row.industry,
+            score=row.score,
+            confidence=row.confidence,
+            evidence_count=row.evidence_count,
+            before_score=row.before_score,
+            after_score=row.after_score,
+            shift=row.shift,
+            p_value=row.p_value,
+            methodology_url=row.methodology_url,
+            computed_at=row.computed_at,
+        )
+        for row in rows
+    ]
 
 
 # ── Donors ─────────────────────────────────────────────────────────────────────

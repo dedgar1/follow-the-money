@@ -5,6 +5,9 @@ Creates:
   - 25 canonical representatives (House + Senate, D/R/I, various states)
   - 12 canonical donors (PACs, corporations, unions across key industries)
   - ~60 funding relationships with realistic donation amounts
+  - 15 bills (119th Congress, 2025) + 7 historical bills (118th Congress, 2022-2024)
+  - ~150 vote records (2025) + ~60 historical votes (2022-2024) for before/after windows
+  - AlignmentScores for 3 (rep, industry) pairs with clearly significant shifts
   - Neo4j graph nodes + FUNDED edges (skipped gracefully if Neo4j is unavailable)
 
 Usage:
@@ -26,6 +29,7 @@ from sqlalchemy import text
 sys.path.insert(0, __file__.rsplit("/infrastructure", 1)[0])
 
 from adapters.postgres.orm_models import (
+    AlignmentScoreRow,
     Base,
     BillRow,
     CanonicalDonorRow,
@@ -74,18 +78,18 @@ REPS = [
 ]
 
 DONORS = [
-    dict(id="DONOR001", name="Energy First PAC",             donor_type="pac",         industry="energy",        state="TX", fec_ids='["C00100001"]'),
-    dict(id="DONOR002", name="Financial Services Roundtable", donor_type="pac",        industry="finance",       state="NY", fec_ids='["C00100002"]'),
-    dict(id="DONOR003", name="TechForward PAC",              donor_type="pac",         industry="technology",    state="CA", fec_ids='["C00100003"]'),
-    dict(id="DONOR004", name="HealthAmerica Alliance",       donor_type="pac",         industry="health",        state="DC", fec_ids='["C00100004"]'),
-    dict(id="DONOR005", name="United Auto Workers PAC",      donor_type="union",       industry="labor",         state="MI", fec_ids='["C00100005"]'),
-    dict(id="DONOR006", name="Meridian Petroleum Corp",      donor_type="corporation", industry="energy",        state="TX", fec_ids='["C00100006"]'),
-    dict(id="DONOR007", name="Apex Capital Management",      donor_type="corporation", industry="finance",       state="NY", fec_ids='["C00100007"]'),
-    dict(id="DONOR008", name="AgriGrowth PAC",               donor_type="pac",         industry="agriculture",   state="IA", fec_ids='["C00100008"]'),
-    dict(id="DONOR009", name="National Defense Contractors", donor_type="pac",         industry="defense",       state="VA", fec_ids='["C00100009"]'),
-    dict(id="DONOR010", name="Real Estate Owners Council",   donor_type="pac",         industry="real_estate",   state="FL", fec_ids='["C00100010"]'),
-    dict(id="DONOR011", name="TelecomFirst PAC",             donor_type="pac",         industry="telecom",       state="DC", fec_ids='["C00100011"]'),
-    dict(id="DONOR012", name="Teachers & Education PAC",     donor_type="union",       industry="education",     state="IL", fec_ids='["C00100012"]'),
+    dict(id="DONOR001", name="Energy First PAC",             donor_type="pac",         industry="energy_natural_resources",       state="TX", fec_ids='["C00100001"]'),
+    dict(id="DONOR002", name="Financial Services Roundtable", donor_type="pac",        industry="finance_insurance_real_estate",  state="NY", fec_ids='["C00100002"]'),
+    dict(id="DONOR003", name="TechForward PAC",              donor_type="pac",         industry="communications_electronics",     state="CA", fec_ids='["C00100003"]'),
+    dict(id="DONOR004", name="HealthAmerica Alliance",       donor_type="pac",         industry="health",                        state="DC", fec_ids='["C00100004"]'),
+    dict(id="DONOR005", name="United Auto Workers PAC",      donor_type="union",       industry="labor",                         state="MI", fec_ids='["C00100005"]'),
+    dict(id="DONOR006", name="Meridian Petroleum Corp",      donor_type="corporation", industry="energy_natural_resources",       state="TX", fec_ids='["C00100006"]'),
+    dict(id="DONOR007", name="Apex Capital Management",      donor_type="corporation", industry="finance_insurance_real_estate",  state="NY", fec_ids='["C00100007"]'),
+    dict(id="DONOR008", name="AgriGrowth PAC",               donor_type="pac",         industry="agriculture",                   state="IA", fec_ids='["C00100008"]'),
+    dict(id="DONOR009", name="National Defense Contractors", donor_type="pac",         industry="defense",                       state="VA", fec_ids='["C00100009"]'),
+    dict(id="DONOR010", name="Real Estate Owners Council",   donor_type="pac",         industry="finance_insurance_real_estate",  state="FL", fec_ids='["C00100010"]'),
+    dict(id="DONOR011", name="TelecomFirst PAC",             donor_type="pac",         industry="communications_electronics",     state="DC", fec_ids='["C00100011"]'),
+    dict(id="DONOR012", name="Teachers & Education PAC",     donor_type="union",       industry="labor",                         state="IL", fec_ids='["C00100012"]'),
 ]
 
 # (donor_id, rep_id, total_cents, cycles, first_date, latest_date)
@@ -217,6 +221,42 @@ BILLS = [
          congress=119, congress_gov_id="hr1015"),
 ]
 
+# ── Historical bills (118th Congress, 2022-2024) ──────────────────────────────
+# Used to build "before" votes for the correlation demo.  Three target
+# (rep, industry) pairs each get 6-8 votes before the major donation event.
+#
+#   REP011 (Bradley Harmon, R-TX) + energy_natural_resources
+#     Donor event: DONOR006 → REP011, latest_donation = 2024-10-20
+#   REP023 (Randall Boone, R-TX senator) + finance_insurance_real_estate
+#     Donor event: DONOR007 → REP023, latest_donation = 2024-10-15
+#   REP019 (Eleanor Davenport, D-CA senator) + communications_electronics
+#     Donor event: DONOR003 → REP019, latest_donation = 2024-10-20
+
+HISTORICAL_BILLS = [
+    dict(id="BILL_H01", title="Fossil Fuel Infrastructure Expansion Act",
+         industries='["energy_natural_resources"]', nlp_confidence=0.87,
+         congress=118, congress_gov_id="hr3001"),
+    dict(id="BILL_H02", title="Offshore Oil and Gas Drilling Authorization Act",
+         industries='["energy_natural_resources"]', nlp_confidence=0.85,
+         congress=118, congress_gov_id="hr3002"),
+    dict(id="BILL_H03", title="Natural Gas Pipeline Deregulation Act",
+         industries='["energy_natural_resources"]', nlp_confidence=0.83,
+         congress=118, congress_gov_id="hr3003"),
+    dict(id="BILL_H04", title="Banking Deregulation and Financial Innovation Act",
+         industries='["finance_insurance_real_estate"]', nlp_confidence=0.88,
+         congress=118, congress_gov_id="hr3004"),
+    dict(id="BILL_H05", title="Securities Market Reform and Modernization Act",
+         industries='["finance_insurance_real_estate"]', nlp_confidence=0.86,
+         congress=118, congress_gov_id="s3001"),
+    dict(id="BILL_H06", title="Internet Privacy and Technology Industry Regulation Act",
+         industries='["communications_electronics"]', nlp_confidence=0.84,
+         congress=118, congress_gov_id="hr3006"),
+    dict(id="BILL_H07", title="Broadband Infrastructure and Net Neutrality Act",
+         industries='["communications_electronics"]', nlp_confidence=0.82,
+         congress=118, congress_gov_id="s3002"),
+]
+
+
 # ── Vote seed data (raw_votes) ─────────────────────────────────────────────────
 # Format: (source_id, member_bioguide_id, member_name, bill_id, position, voted_at, chamber)
 # Unique constraint: (source_id, member_bioguide_id)
@@ -325,6 +365,163 @@ def _build_votes() -> list[dict]:
     return rows
 
 
+# ── Historical votes for correlation demo ─────────────────────────────────────
+#
+# Three target pairs with designed before/after patterns:
+#
+#   REP011  energy_natural_resources  event 2024-10-20
+#     before (8 votes): 1 Yea, 7 Nay  → 12.5% aligned
+#     after  (7 votes): 6 Yea, 1 Nay  → 85.7% aligned   shift ≈ +0.73
+#
+#   REP023  finance_insurance_real_estate  event 2024-10-15
+#     before (8 votes): 1 Yea, 7 Nay  → 12.5% aligned
+#     after  (6 votes): 5 Yea, 1 Nay  → 83.3% aligned   shift ≈ +0.71
+#
+#   REP019  communications_electronics  event 2024-10-20
+#     before (8 votes): 1 Yea, 7 Nay  → 12.5% aligned
+#     after  (6 votes): 5 Yea, 1 Nay  → 83.3% aligned   shift ≈ +0.71
+
+
+def _build_historical_votes() -> list[dict]:
+    """
+    Generate historical before-window votes (118th Congress, 2022–2024) plus
+    supplementary after-window votes (late 2024–2026) for the three demo reps.
+
+    Source IDs use distinct roll-call ranges that do not collide with the
+    existing seeds:
+      house/118/2/3xx  — REP011 historical (before)
+      senate/118/2/5xx — REP023 historical (before)
+      senate/118/2/7xx — REP019 historical (before)
+      house/118/2/4xx  — REP011 supplementary (after)
+      senate/118/2/6xx — REP023 supplementary (after)
+      senate/118/2/8xx — REP019 supplementary (after)
+    """
+    from ulid import ULID
+
+    rows: list[dict] = []
+
+    def _vote(source_id, bill_id, member_bioguide_id, member_name, position,
+               voted_at, chamber, congress=118, session_num=2):
+        bill = next(
+            (b for b in HISTORICAL_BILLS if b["congress_gov_id"] == bill_id),
+            None,
+        )
+        title = bill["title"] if bill else bill_id
+        return dict(
+            id=str(ULID()),
+            source="congress_api" if chamber == "House" else "senate_xml",
+            source_id=source_id,
+            congress=congress,
+            session=session_num,
+            chamber=chamber,
+            roll_call=int(source_id.split("/")[-1]),
+            bill_id=bill_id,
+            bill_title=title,
+            member_bioguide_id=member_bioguide_id,
+            member_name=member_name,
+            position=position,
+            voted_at=voted_at,
+            payload={},
+            is_processed=False,
+        )
+
+    # ── REP011 (H000011, Bradley J. Harmon, R-TX) + energy ────────────────────
+    # BEFORE (energy event = 2024-10-20, window: 2022-10-20 → 2024-10-20)
+    # 1 Yea, 7 Nay
+    energy_before = [
+        ("house/118/2/301", "hr3001", "2022-11-08", "Nay"),
+        ("house/118/2/302", "hr3002", "2023-01-25", "Nay"),
+        ("house/118/2/303", "hr3003", "2023-04-12", "Nay"),
+        ("house/118/2/304", "hr3001", "2023-07-19", "Nay"),
+        ("house/118/2/305", "hr3002", "2023-10-30", "Nay"),
+        ("house/118/2/306", "hr3003", "2024-02-14", "Yea"),  # one early YES
+        ("house/118/2/307", "hr3001", "2024-05-22", "Nay"),
+        ("house/118/2/308", "hr3002", "2024-08-07", "Nay"),
+    ]
+    for src_id, bill_id, voted_at, pos in energy_before:
+        rows.append(_vote(src_id, bill_id, "H000011", "Bradley J. Harmon",
+                          pos, voted_at, "House"))
+
+    # AFTER (energy event = 2024-10-20, window: 2024-10-20 → 2026-10-20)
+    # 6 Yea, 1 Nay (the existing 2025 seed adds hr1010→Yea, hr1001→Nay, so
+    # this gives a total after picture of 7 Yea / 2 Nay after combining,
+    # but this function just adds the supplementary votes)
+    energy_after = [
+        ("house/118/2/401", "hr3001", "2024-11-15", "Yea"),
+        ("house/118/2/402", "hr3002", "2025-04-22", "Yea"),
+        ("house/118/2/403", "hr3003", "2025-06-10", "Yea"),
+        ("house/118/2/404", "hr3001", "2025-09-03", "Yea"),
+        ("house/118/2/405", "hr3002", "2026-01-14", "Yea"),
+        ("house/118/2/406", "hr3003", "2026-03-28", "Yea"),
+        ("house/118/2/407", "hr3001", "2026-06-05", "Nay"),  # one late nay
+    ]
+    for src_id, bill_id, voted_at, pos in energy_after:
+        rows.append(_vote(src_id, bill_id, "H000011", "Bradley J. Harmon",
+                          pos, voted_at, "House"))
+
+    # ── REP023 (B000023, Randall T. Boone, R-TX) + finance ────────────────────
+    # BEFORE (finance event = 2024-10-15, window: 2022-10-15 → 2024-10-15)
+    # 1 Yea, 7 Nay
+    finance_before = [
+        ("senate/118/2/501", "hr3004", "2022-11-10", "Nay"),
+        ("senate/118/2/502", "s3001",  "2023-01-18", "Nay"),
+        ("senate/118/2/503", "hr3004", "2023-04-05", "Nay"),
+        ("senate/118/2/504", "s3001",  "2023-07-12", "Nay"),
+        ("senate/118/2/505", "hr3004", "2023-11-08", "Yea"),  # one early YES
+        ("senate/118/2/506", "s3001",  "2024-03-20", "Nay"),
+        ("senate/118/2/507", "hr3004", "2024-06-14", "Nay"),
+        ("senate/118/2/508", "s3001",  "2024-09-03", "Nay"),
+    ]
+    for src_id, bill_id, voted_at, pos in finance_before:
+        rows.append(_vote(src_id, bill_id, "B000023", "Randall T. Boone",
+                          pos, voted_at, "Senate"))
+
+    # AFTER: 5 Yea, 1 Nay
+    finance_after = [
+        ("senate/118/2/601", "hr3004", "2024-11-20", "Yea"),
+        ("senate/118/2/602", "s3001",  "2025-02-11", "Yea"),
+        ("senate/118/2/603", "hr3004", "2025-05-07", "Yea"),
+        ("senate/118/2/604", "s3001",  "2025-08-19", "Yea"),
+        ("senate/118/2/605", "hr3004", "2025-11-12", "Yea"),
+        ("senate/118/2/606", "s3001",  "2026-02-04", "Nay"),  # one exception
+    ]
+    for src_id, bill_id, voted_at, pos in finance_after:
+        rows.append(_vote(src_id, bill_id, "B000023", "Randall T. Boone",
+                          pos, voted_at, "Senate"))
+
+    # ── REP019 (D000019, Eleanor H. Davenport, D-CA) + communications ─────────
+    # BEFORE (tech event = 2024-10-20, window: 2022-10-20 → 2024-10-20)
+    # 1 Yea, 7 Nay
+    tech_before = [
+        ("senate/118/2/701", "hr3006", "2022-11-04", "Nay"),
+        ("senate/118/2/702", "s3002",  "2023-01-26", "Nay"),
+        ("senate/118/2/703", "hr3006", "2023-05-18", "Nay"),
+        ("senate/118/2/704", "s3002",  "2023-09-07", "Nay"),
+        ("senate/118/2/705", "hr3006", "2024-01-15", "Yea"),  # one early YES
+        ("senate/118/2/706", "s3002",  "2024-04-30", "Nay"),
+        ("senate/118/2/707", "hr3006", "2024-07-11", "Nay"),
+        ("senate/118/2/708", "s3002",  "2024-09-25", "Nay"),
+    ]
+    for src_id, bill_id, voted_at, pos in tech_before:
+        rows.append(_vote(src_id, bill_id, "D000019", "Eleanor H. Davenport",
+                          pos, voted_at, "Senate"))
+
+    # AFTER: 5 Yea, 1 Nay
+    tech_after = [
+        ("senate/118/2/801", "hr3006", "2024-11-12", "Yea"),
+        ("senate/118/2/802", "s3002",  "2025-02-25", "Yea"),
+        ("senate/118/2/803", "hr3006", "2025-05-14", "Yea"),
+        ("senate/118/2/804", "s3002",  "2025-08-06", "Yea"),
+        ("senate/118/2/805", "hr3006", "2025-11-19", "Yea"),
+        ("senate/118/2/806", "s3002",  "2026-02-04", "Nay"),  # one exception
+    ]
+    for src_id, bill_id, voted_at, pos in tech_after:
+        rows.append(_vote(src_id, bill_id, "D000019", "Eleanor H. Davenport",
+                          pos, voted_at, "Senate"))
+
+    return rows
+
+
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
 
@@ -342,13 +539,22 @@ def _reset(session) -> None:
     rel_ids = [_rel_id(d, r) for d, r, *_ in RELATIONSHIPS]
     rep_ids = [r["id"] for r in REPS]
     donor_ids = [d["id"] for d in DONORS]
-    bill_ids = [b["id"] for b in BILLS]
+    bill_ids = [b["id"] for b in BILLS] + [b["id"] for b in HISTORICAL_BILLS]
     if rel_ids:
         session.execute(
             text("DELETE FROM canonical_donor_rep_relationships WHERE id = ANY(:ids)"),
             {"ids": rel_ids},
         )
+    # Alignment scores reference reps — delete before reps
     if rep_ids:
+        session.execute(
+            text("DELETE FROM alignment_scores WHERE rep_id = ANY(:ids)"),
+            {"ids": rep_ids},
+        )
+        session.execute(
+            text("DELETE FROM correlation_events WHERE rep_id = ANY(:ids)"),
+            {"ids": rep_ids},
+        )
         session.execute(
             text("DELETE FROM canonical_reps WHERE id = ANY(:ids)"),
             {"ids": rep_ids},
@@ -360,7 +566,12 @@ def _reset(session) -> None:
         )
     # Delete raw_votes by source pattern and bills by id
     session.execute(
-        text("DELETE FROM raw_votes WHERE source_id LIKE 'house/119/1/%' OR source_id LIKE 'senate/119/1/%'"),
+        text(
+            "DELETE FROM raw_votes WHERE source_id LIKE 'house/119/1/%'"
+            " OR source_id LIKE 'senate/119/1/%'"
+            " OR source_id LIKE 'house/118/2/%'"
+            " OR source_id LIKE 'senate/118/2/%'"
+        ),
     )
     if bill_ids:
         session.execute(
@@ -423,7 +634,7 @@ def _seed_postgres(session) -> None:
     log.info(f"  Bills: {inserted_bills} inserted ({len(BILLS) - inserted_bills} already existed)")
     session.flush()
 
-    # Raw votes (Sprint 7)
+    # Raw votes (Sprint 7 — 2025 votes)
     vote_rows = _build_votes()
     inserted_votes = 0
     for v in vote_rows:
@@ -435,7 +646,61 @@ def _seed_postgres(session) -> None:
             continue
         session.add(RawVoteRow(**v))
         inserted_votes += 1
-    log.info(f"  Votes: {inserted_votes} inserted ({len(vote_rows) - inserted_votes} already existed)")
+    log.info(f"  Votes (2025): {inserted_votes} inserted ({len(vote_rows) - inserted_votes} already existed)")
+
+    # Historical bills (118th Congress, Sprint 8 correlation demo)
+    inserted_hist_bills = 0
+    for b in HISTORICAL_BILLS:
+        existing = session.get(BillRow, b["id"])
+        if existing:
+            continue
+        session.add(BillRow(**b))
+        inserted_hist_bills += 1
+    log.info(f"  Historical bills: {inserted_hist_bills} inserted ({len(HISTORICAL_BILLS) - inserted_hist_bills} already existed)")
+    session.flush()
+
+    # Historical votes (2022-2024 before-window + supplementary after-window)
+    hist_vote_rows = _build_historical_votes()
+    inserted_hist_votes = 0
+    for v in hist_vote_rows:
+        existing = session.execute(
+            text("SELECT 1 FROM raw_votes WHERE source_id = :sid AND member_bioguide_id = :bio"),
+            {"sid": v["source_id"], "bio": v["member_bioguide_id"]},
+        ).fetchone()
+        if existing:
+            continue
+        session.add(RawVoteRow(**v))
+        inserted_hist_votes += 1
+    log.info(f"  Historical votes: {inserted_hist_votes} inserted ({len(hist_vote_rows) - inserted_hist_votes} already existed)")
+
+
+def _seed_alignment_scores() -> None:
+    """
+    Run the correlation engine on the three demo reps and persist results.
+
+    Calls pipeline.tasks.compute_correlations._compute_for_rep() directly
+    (no Celery required) so alignment scores appear immediately in the UI.
+    """
+    from adapters.postgres.orm_models import CanonicalRepRow
+    from infrastructure.database import get_session
+    from pipeline.tasks.compute_correlations import _compute_for_rep
+
+    demo_rep_ids = {
+        "REP011": "Bradley J. Harmon (energy)",
+        "REP023": "Randall T. Boone (finance)",
+        "REP019": "Eleanor H. Davenport (tech)",
+    }
+
+    try:
+        total = 0
+        for rep_id, label in demo_rep_ids.items():
+            scores = _compute_for_rep(rep_id)
+            total += scores
+            log.info(f"  Alignment: {label} → {scores} score(s) written")
+
+        log.info(f"  Alignment scores total: {total} written")
+    except Exception as exc:
+        log.warning(f"  Alignment score computation failed (non-fatal): {exc}")
 
 
 def _seed_neo4j() -> None:
@@ -496,17 +761,23 @@ def main() -> None:
             session.flush()
         _seed_postgres(session)
 
+    log.info("\nComputing alignment scores…")
+    _seed_alignment_scores()
+
     log.info("\nSeeding Neo4j…")
     _seed_neo4j()
 
     vote_count = len(_build_votes())
+    hist_vote_count = len(_build_historical_votes())
     log.info("\nDone. Summary:")
     log.info(f"  {len(REPS)} representatives")
     log.info(f"  {len(DONORS)} donors")
     log.info(f"  {len(RELATIONSHIPS)} funding relationships")
-    log.info(f"  {len(BILLS)} bills")
-    log.info(f"  {vote_count} raw vote records")
+    log.info(f"  {len(BILLS) + len(HISTORICAL_BILLS)} bills ({len(BILLS)} current + {len(HISTORICAL_BILLS)} historical)")
+    log.info(f"  {vote_count + hist_vote_count} raw vote records ({vote_count} current + {hist_vote_count} historical)")
+    log.info(f"  3 alignment scores (REP011/energy, REP023/finance, REP019/tech)")
     log.info("\nOpen http://localhost:3000 to view the UI.")
+    log.info("  Try: /rep/REP011  /rep/REP023  /rep/REP019  (correlation tab populated)")
 
 
 if __name__ == "__main__":

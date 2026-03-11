@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, formatDollars, CHAMBER_LABEL } from "@/lib/api/client";
@@ -275,7 +275,7 @@ export function CompareView() {
     const ids = searchParams.get("ids");
     if (!ids) return;
     const idList = ids.split(",").map((s) => s.trim()).filter(Boolean).slice(0, MAX_SLOTS);
-    if (idList.length < 2) return;
+    if (idList.length === 0) return;
 
     Promise.all(idList.map((id) => api.getRepresentative(id).catch(() => null))).then((reps) => {
       setSlots([

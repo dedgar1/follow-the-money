@@ -68,21 +68,28 @@ def _compute_all() -> int:
     from infrastructure.database import get_session
 
     with get_session() as session:
-        reps = session.query(CanonicalRepRow).all()
+        # Extract IDs only — ORM attributes expire after the session commits/closes
+        rep_ids = [r.id for r in session.query(CanonicalRepRow).all()]
 
-    logger.info("compute_correlations: processing %d canonical reps", len(reps))
+    logger.info("compute_correlations: processing %d canonical reps", len(rep_ids))
 
     total = 0
-    for rep_row in reps:
-        scores_written = _compute_for_rep(rep_row)
+    for rep_id in rep_ids:
+        scores_written = _compute_for_rep(rep_id)
         total += scores_written
 
     return total
 
 
-def _compute_for_rep(rep_row) -> int:
+def _compute_for_rep(rep_id_or_row) -> int:
     """
     Compute and save AlignmentScores for one representative.
+
+    Accepts either a rep ID string or a CanonicalRepRow (for backwards
+    compatibility with the seed script).  Always reloads the row fresh
+    from the DB inside its own session so detached-instance errors cannot
+    occur.
+
     Returns number of scores persisted.
     """
     from adapters.postgres.correlation_repo import PostgresCorrelationRepository
@@ -130,10 +137,19 @@ def _compute_for_rep(rep_row) -> int:
         correlation_repo=_NullCorrRepo(), # type: ignore[arg-type]
     )
 
-    rep_id = RepId(rep_row.id)
-    rep_ref = CanonicalRepRef(id=rep_id, full_name=rep_row.full_name)
+    # Accept either a rep ID string or an ORM row — always reload fresh so
+    # detached-instance errors cannot occur (session commits expire attributes).
+    from adapters.postgres.orm_models import CanonicalRepRow as _RepRow
+    rep_id_str = rep_id_or_row if isinstance(rep_id_or_row, str) else str(rep_id_or_row.id)
 
     with get_session() as session:
+        rep_row = session.get(_RepRow, rep_id_str)
+        if rep_row is None:
+            return 0
+
+        rep_id = RepId(rep_row.id)
+        rep_ref = CanonicalRepRef(id=rep_id, full_name=rep_row.full_name)
+
         # ── 1. Load relationships with donor industry ─────────────────────────
         rel_rows = (
             session.query(CanonicalRelationshipRow)

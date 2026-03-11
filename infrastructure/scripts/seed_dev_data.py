@@ -78,18 +78,18 @@ REPS = [
 ]
 
 DONORS = [
-    dict(id="DONOR001", name="Energy First PAC",             donor_type="pac",         industry="energy",        state="TX", fec_ids='["C00100001"]'),
-    dict(id="DONOR002", name="Financial Services Roundtable", donor_type="pac",        industry="finance",       state="NY", fec_ids='["C00100002"]'),
-    dict(id="DONOR003", name="TechForward PAC",              donor_type="pac",         industry="technology",    state="CA", fec_ids='["C00100003"]'),
-    dict(id="DONOR004", name="HealthAmerica Alliance",       donor_type="pac",         industry="health",        state="DC", fec_ids='["C00100004"]'),
-    dict(id="DONOR005", name="United Auto Workers PAC",      donor_type="union",       industry="labor",         state="MI", fec_ids='["C00100005"]'),
-    dict(id="DONOR006", name="Meridian Petroleum Corp",      donor_type="corporation", industry="energy",        state="TX", fec_ids='["C00100006"]'),
-    dict(id="DONOR007", name="Apex Capital Management",      donor_type="corporation", industry="finance",       state="NY", fec_ids='["C00100007"]'),
-    dict(id="DONOR008", name="AgriGrowth PAC",               donor_type="pac",         industry="agriculture",   state="IA", fec_ids='["C00100008"]'),
-    dict(id="DONOR009", name="National Defense Contractors", donor_type="pac",         industry="defense",       state="VA", fec_ids='["C00100009"]'),
-    dict(id="DONOR010", name="Real Estate Owners Council",   donor_type="pac",         industry="real_estate",   state="FL", fec_ids='["C00100010"]'),
-    dict(id="DONOR011", name="TelecomFirst PAC",             donor_type="pac",         industry="telecom",       state="DC", fec_ids='["C00100011"]'),
-    dict(id="DONOR012", name="Teachers & Education PAC",     donor_type="union",       industry="education",     state="IL", fec_ids='["C00100012"]'),
+    dict(id="DONOR001", name="Energy First PAC",             donor_type="pac",         industry="energy_natural_resources",       state="TX", fec_ids='["C00100001"]'),
+    dict(id="DONOR002", name="Financial Services Roundtable", donor_type="pac",        industry="finance_insurance_real_estate",  state="NY", fec_ids='["C00100002"]'),
+    dict(id="DONOR003", name="TechForward PAC",              donor_type="pac",         industry="communications_electronics",     state="CA", fec_ids='["C00100003"]'),
+    dict(id="DONOR004", name="HealthAmerica Alliance",       donor_type="pac",         industry="health",                        state="DC", fec_ids='["C00100004"]'),
+    dict(id="DONOR005", name="United Auto Workers PAC",      donor_type="union",       industry="labor",                         state="MI", fec_ids='["C00100005"]'),
+    dict(id="DONOR006", name="Meridian Petroleum Corp",      donor_type="corporation", industry="energy_natural_resources",       state="TX", fec_ids='["C00100006"]'),
+    dict(id="DONOR007", name="Apex Capital Management",      donor_type="corporation", industry="finance_insurance_real_estate",  state="NY", fec_ids='["C00100007"]'),
+    dict(id="DONOR008", name="AgriGrowth PAC",               donor_type="pac",         industry="agriculture",                   state="IA", fec_ids='["C00100008"]'),
+    dict(id="DONOR009", name="National Defense Contractors", donor_type="pac",         industry="defense",                       state="VA", fec_ids='["C00100009"]'),
+    dict(id="DONOR010", name="Real Estate Owners Council",   donor_type="pac",         industry="finance_insurance_real_estate",  state="FL", fec_ids='["C00100010"]'),
+    dict(id="DONOR011", name="TelecomFirst PAC",             donor_type="pac",         industry="communications_electronics",     state="DC", fec_ids='["C00100011"]'),
+    dict(id="DONOR012", name="Teachers & Education PAC",     donor_type="union",       industry="labor",                         state="IL", fec_ids='["C00100012"]'),
 ]
 
 # (donor_id, rep_id, total_cents, cycles, first_date, latest_date)
@@ -692,21 +692,9 @@ def _seed_alignment_scores() -> None:
     }
 
     try:
-        with get_session() as session:
-            reps = {
-                r.id: r
-                for r in session.query(CanonicalRepRow)
-                .filter(CanonicalRepRow.id.in_(demo_rep_ids.keys()))
-                .all()
-            }
-
         total = 0
         for rep_id, label in demo_rep_ids.items():
-            rep_row = reps.get(rep_id)
-            if rep_row is None:
-                log.warning(f"  Alignment: {rep_id} not found in DB, skipping")
-                continue
-            scores = _compute_for_rep(rep_row)
+            scores = _compute_for_rep(rep_id)
             total += scores
             log.info(f"  Alignment: {label} → {scores} score(s) written")
 

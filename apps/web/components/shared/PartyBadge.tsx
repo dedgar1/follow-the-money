@@ -6,16 +6,28 @@ interface Props {
 
 export function PartyBadge({ party }: Props) {
   const label = PARTY_LABEL[party] ?? party;
-  const cls =
+  const color =
     party === "D"
-      ? "bg-blue-100 text-blue-800"
+      ? "var(--dem)"
       : party === "R"
-        ? "bg-red-100 text-red-800"
-        : "bg-purple-100 text-purple-800";
+        ? "var(--rep)"
+        : "#7c3aed";
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cls}`}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "2px 8px",
+        borderRadius: 20,
+        fontSize: 10,
+        fontWeight: 700,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color,
+        border: `1px solid ${color}`,
+        background: "transparent",
+      }}
     >
       {label}
     </span>

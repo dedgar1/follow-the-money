@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOLLOW THE MONEY — Mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,700;0,900;1,300;1,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0e8;
+    --red: #e63022;
+    --blue: #1a4fd6;
+    --yellow: #f5c518;
+    --gray: #1c1c1c;
+    --mid: #444;
+    --light: #888;
+    --dem: #1a4fd6;
+    --rep: #e63022;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Mono', monospace;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--black);
+    border-bottom: 2px solid var(--yellow);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 2rem; height: 56px;
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem; letter-spacing: .08em;
+    color: var(--yellow);
+    cursor: pointer;
+  }
+  .nav-logo span { color: var(--white); }
+  .nav-search {
+    display: flex; align-items: center; gap: .5rem;
+    background: var(--gray); border: 1px solid #333;
+    padding: .4rem 1rem; width: 280px;
+  }
+  .nav-search input {
+    background: none; border: none; outline: none;
+    color: var(--white); font-family: 'DM Mono', monospace;
+    font-size: .8rem; width: 100%;
+  }
+  .nav-search input::placeholder { color: var(--light); }
+  .nav-links { display: flex; gap: 1.5rem; font-size: .75rem; color: var(--light); }
+  .nav-links a { color: inherit; text-decoration: none; cursor: pointer; transition: color .2s; }
+  .nav-links a:hover { color: var(--yellow); }
+
+  /* ══════════════════════════════════
+     SCREEN 1 — HOMEPAGE
+  ══════════════════════════════════ */
+  #home { background: var(--black); padding-top: 56px; }
+
+  .hero {
+    min-height: calc(100vh - 56px);
+    display: grid; grid-template-columns: 1fr 1fr;
+    position: relative; overflow: hidden;
+  }
+
+  .hero-left {
+    padding: 5rem 3rem 4rem 4rem;
+    display: flex; flex-direction: column; justify-content: center;
+    position: relative; z-index: 2;
+  }
+
+  .hero-eyebrow {
+    font-size: .7rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--yellow); margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .hero-eyebrow::before {
+    content: ''; display: block;
+    width: 32px; height: 2px; background: var(--yellow);
+  }
+
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 9vw, 9rem);
+    line-height: .9; letter-spacing: .02em;
+    color: var(--white);
+    margin-bottom: 2rem;
+  }
+  .hero-title .accent { color: var(--yellow); display: block; }
+
+  .hero-sub {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem; font-weight: 300; font-style: italic;
+    color: #aaa; line-height: 1.6; max-width: 420px;
+    margin-bottom: 3rem;
+  }
+
+  /* ZIP INPUT */
+  .zip-block { margin-bottom: 1.5rem; }
+  .zip-label {
+    font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--yellow); margin-bottom: .6rem; display: block;
+  }
+  .zip-row {
+    display: flex; gap: 0;
+  }
+  .zip-input {
+    background: var(--white); color: var(--black);
+    border: none; outline: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem; letter-spacing: .1em;
+    padding: .6rem 1rem; width: 180px;
+  }
+  .zip-input::placeholder { color: #999; }
+  .zip-btn {
+    background: var(--yellow); color: var(--black);
+    border: none; cursor: pointer;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem; letter-spacing: .15em;
+    padding: 0 1.5rem;
+    transition: background .15s;
+  }
+  .zip-btn:hover { background: #ffd700; }
+
+  .or-divider {
+    font-size: .65rem; letter-spacing: .2em; color: var(--light);
+    margin: 1rem 0;
+  }
+
+  .discover-links {
+    display: flex; gap: .75rem; flex-wrap: wrap;
+  }
+  .discover-chip {
+    font-size: .72rem; letter-spacing: .1em;
+    border: 1px solid #444; color: var(--light);
+    padding: .4rem .9rem; cursor: pointer;
+    transition: all .2s;
+    text-transform: uppercase;
+  }
+  .discover-chip:hover {
+    border-color: var(--yellow); color: var(--yellow);
+  }
+
+  /* HERO RIGHT — MAP AREA */
+  .hero-right {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    background: #0f0f0f;
+    border-left: 1px solid #222;
+  }
+
+  .map-container {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    padding: 3rem 2rem;
+    position: relative;
+  }
+
+  .map-label {
+    position: absolute; top: 2rem; left: 2rem;
+    font-size: .65rem; letter-spacing: .2em; color: var(--yellow);
+    text-transform: uppercase;
+  }
+
+  .map-toggle {
+    position: absolute; top: 2rem; right: 2rem;
+    display: flex; gap: 0;
+  }
+  .map-toggle button {
+    background: none; border: 1px solid #444;
+    color: var(--light); font-family: 'DM Mono', monospace;
+    font-size: .65rem; letter-spacing: .1em; text-transform: uppercase;
+    padding: .35rem .8rem; cursor: pointer; transition: all .2s;
+  }
+  .map-toggle button.active {
+    background: var(--yellow); border-color: var(--yellow);
+    color: var(--black);
+  }
+
+  /* SVG US MAP */
+  #us-map { width: 100%; max-width: 560px; cursor: pointer; }
+
+  .state-path {
+    fill: #1a1a1a; stroke: #333; stroke-width: .8;
+    transition: fill .2s;
+    cursor: pointer;
+  }
+  .state-path:hover { fill: #2a2a2a; stroke: var(--yellow); stroke-width: 1.2; }
+  .state-path.dem { fill: #0d2a5e; }
+  .state-path.rep { fill: #5e0d0d; }
+  .state-path.dem:hover { fill: #1a4fd6; stroke: var(--yellow); }
+  .state-path.rep:hover { fill: #e63022; stroke: var(--yellow); }
+
+  /* MAP TOOLTIP */
+  .map-tooltip {
+    position: fixed; background: var(--black);
+    border: 1px solid var(--yellow);
+    padding: .6rem 1rem; font-size: .72rem;
+    pointer-events: none; display: none; z-index: 200;
+    min-width: 180px;
+  }
+  .map-tooltip .tt-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; }
+  .map-tooltip .tt-party { font-size: .65rem; letter-spacing: .15em; margin-top: .2rem; }
+  .map-tooltip .tt-party.dem { color: var(--dem); }
+  .map-tooltip .tt-party.rep { color: var(--rep); }
+  .map-tooltip .tt-hint { font-size: .6rem; color: var(--light); margin-top: .5rem; }
+
+  /* TICKER */
+  .ticker {
+    background: var(--yellow); color: var(--black);
+    overflow: hidden; height: 36px;
+    display: flex; align-items: center;
+  }
+  .ticker-label {
+    font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;
+    font-weight: 700; padding: 0 1.5rem;
+    white-space: nowrap; background: var(--black); color: var(--yellow);
+    height: 100%; display: flex; align-items: center;
+    border-right: 2px solid var(--yellow);
+  }
+  .ticker-track {
+    display: flex; gap: 3rem; padding: 0 2rem;
+    animation: ticker-scroll 25s linear infinite;
+    white-space: nowrap; font-size: .72rem; font-weight: 700;
+  }
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* STATS ROW */
+  .stats-row {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid #222; border-bottom: 1px solid #222;
+  }
+  .stat-cell {
+    padding: 2rem 2.5rem;
+    border-right: 1px solid #222;
+    position: relative; overflow: hidden;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem; color: var(--yellow);
+    line-height: 1; display: block;
+  }
+  .stat-label {
+    font-size: .65rem; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--light); margin-top: .4rem;
+  }
+
+  /* ══════════════════════════════════
+     SCREEN 2 — SEARCH RESULTS
+  ══════════════════════════════════ */
+  #results {
+    padding-top: 56px; background: var(--black);
+    min-height: 100vh;
+  }
+
+  .results-header {
+    padding: 3rem 4rem 2rem;
+    border-bottom: 1px solid #222;
+    display: flex; align-items: flex-end; justify-content: space-between;
+  }
+  .results-zip-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem; color: var(--white);
+    letter-spacing: .05em;
+  }
+  .results-zip-display span { color: var(--yellow); }
+  .results-sub { font-size: .75rem; color: var(--light); margin-top: .3rem; }
+
+  .results-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid #222;
+  }
+
+  .rep-card {
+    padding: 2.5rem; border-right: 1px solid #222; border-bottom: 1px solid #222;
+    cursor: pointer; transition: background .2s;
+    position: relative; overflow: hidden;
+  }
+  .rep-card:hover { background: #111; }
+  .rep-card:nth-child(3n) { border-right: none; }
+
+  .rep-card-party-bar {
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  }
+  .rep-card-party-bar.dem { background: var(--dem); }
+  .rep-card-party-bar.rep { background: var(--rep); }
+
+  .rep-card-chamber {
+    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--light); margin-bottom: .75rem;
+  }
+  .rep-card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem; line-height: 1; margin-bottom: .3rem;
+  }
+  .rep-card-meta {
+    font-size: .7rem; color: var(--light); margin-bottom: 1.5rem;
+  }
+  .rep-card-meta span.dem { color: var(--dem); }
+  .rep-card-meta span.rep { color: var(--rep); }
+
+  .rep-card-funding {
+    margin-top: auto;
+  }
+  .rep-card-total {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem; color: var(--yellow);
+  }
+  .rep-card-funding-label {
+    font-size: .6rem; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--light); margin-bottom: .75rem;
+  }
+
+  .rep-card-top-donors {
+    display: flex; flex-direction: column; gap: .35rem;
+    margin-top: .75rem;
+  }
+  .donor-mini-row {
+    display: flex; align-items: center; gap: .5rem;
+  }
+  .donor-mini-bar-track {
+    flex: 1; height: 3px; background: #222;
+  }
+  .donor-mini-bar {
+    height: 100%; background: var(--yellow); opacity: .6;
+  }
+  .donor-mini-name {
+    font-size: .62rem; color: var(--light); width: 130px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .donor-mini-amt { font-size: .62rem; color: var(--white); width: 55px; text-align: right; }
+
+  .rep-card-cta {
+    margin-top: 1.5rem;
+    font-size: .65rem; letter-spacing: .15em; text-transform: uppercase;
+    color: var(--yellow); display: flex; align-items: center; gap: .4rem;
+  }
+  .rep-card-cta::after { content: '→'; }
+
+  /* ══════════════════════════════════
+     SCREEN 3 — PROFILE
+  ══════════════════════════════════ */
+  #profile { padding-top: 56px; background: var(--black); }
+
+  .profile-header {
+    display: grid; grid-template-columns: auto 1fr auto;
+    align-items: center; gap: 2rem;
+    padding: 2.5rem 4rem;
+    border-bottom: 2px solid #222;
+    position: relative; overflow: hidden;
+  }
+  .profile-header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 5px;
+  }
+  .profile-header.dem::before { background: var(--dem); }
+  .profile-header.rep::before { background: var(--rep); }
+
+  .profile-photo-wrap {
+    width: 90px; height: 90px;
+    border: 3px solid var(--yellow);
+    overflow: hidden; flex-shrink: 0;
+  }
+  .profile-photo-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem;
+    color: var(--yellow);
+  }
+  .profile-photo-placeholder.dem { background: #0d2a5e; }
+  .profile-photo-placeholder.rep { background: #5e0d0d; }
+
+  .profile-identity { flex: 1; }
+  .profile-chamber-tag {
+    font-size: .6rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--light); margin-bottom: .4rem;
+  }
+  .profile-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.2rem; line-height: 1; letter-spacing: .03em;
+  }
+  .profile-meta {
+    font-size: .75rem; color: var(--light); margin-top: .35rem;
+    display: flex; gap: 1.5rem; align-items: center;
+  }
+  .profile-meta .party-tag {
+    font-weight: 700; letter-spacing: .1em;
+  }
+  .profile-meta .party-tag.dem { color: var(--dem); }
+  .profile-meta .party-tag.rep { color: var(--rep); }
+
+  .profile-hero-numbers {
+    text-align: right;
+  }
+  .profile-total-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem; color: var(--yellow); line-height: 1;
+  }
+  .profile-total-label {
+    font-size: .6rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--light); margin-top: .3rem;
+  }
+
+  /* CYCLE TOGGLE */
+  .cycle-toggle-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 4rem; border-bottom: 1px solid #222;
+    background: #0d0d0d;
+  }
+  .cycle-toggle {
+    display: flex; gap: 0;
+  }
+  .cycle-btn {
+    background: none; border: 1px solid #333;
+    color: var(--light); font-family: 'DM Mono', monospace;
+    font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+    padding: .4rem 1rem; cursor: pointer; transition: all .15s;
+  }
+  .cycle-btn.active {
+    background: var(--yellow); border-color: var(--yellow);
+    color: var(--black); font-weight: 700;
+  }
+  .viz-tab-row {
+    display: flex; gap: .4rem;
+  }
+  .viz-tab {
+    background: none; border: 1px solid #333;
+    color: var(--light); font-family: 'DM Mono', monospace;
+    font-size: .65rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: .4rem .8rem; cursor: pointer; transition: all .15s;
+  }
+  .viz-tab.active {
+    border-color: var(--white); color: var(--white);
+  }
+  .viz-tab:hover { border-color: #666; color: #ccc; }
+
+  /* PROFILE BODY */
+  .profile-body {
+    display: grid; grid-template-columns: 1fr 380px;
+    min-height: calc(100vh - 240px);
+  }
+
+  .viz-panel {
+    padding: 2.5rem 3rem; border-right: 1px solid #222;
+  }
+  .viz-title {
+    font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;
+    color: var(--yellow); margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .viz-title::before {
+    content: ''; display: block; width: 20px; height: 2px; background: var(--yellow);
+  }
+
+  /* DONUT CHART */
+  .donut-wrap {
+    display: flex; align-items: center; gap: 3rem;
+  }
+  .donut-svg-wrap { position: relative; flex-shrink: 0; }
+  .donut-center-text {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+  .donut-center-amount {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem; color: var(--yellow); display: block;
+  }
+  .donut-center-label {
+    font-size: .55rem; letter-spacing: .15em; color: var(--light);
+    text-transform: uppercase;
+  }
+
+  .donut-legend { flex: 1; }
+  .legend-item {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .6rem 0; border-bottom: 1px solid #1a1a1a;
+    cursor: pointer; transition: all .2s;
+  }
+  .legend-item:hover { padding-left: .4rem; }
+  .legend-swatch { width: 12px; height: 12px; flex-shrink: 0; }
+  .legend-name { font-size: .75rem; flex: 1; }
+  .legend-pct {
+    font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem;
+    color: var(--yellow);
+  }
+  .legend-amt { font-size: .65rem; color: var(--light); min-width: 70px; text-align: right; }
+
+  /* BAR CHART VIZ */
+  .bar-chart { display: none; flex-direction: column; gap: .8rem; }
+  .bar-chart.active { display: flex; }
+  .donut-wrap.active { display: flex; }
+  .donut-wrap { display: none; }
+
+  .bar-row {
+    display: grid; grid-template-columns: 180px 1fr 80px;
+    align-items: center; gap: 1rem;
+    cursor: pointer; transition: all .2s;
+  }
+  .bar-row:hover .bar-fill { opacity: 1; }
+  .bar-industry { font-size: .72rem; text-align: right; color: var(--light); }
+  .bar-track {
+    height: 28px; background: #1a1a1a; position: relative; overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%; opacity: .75;
+    display: flex; align-items: center; padding-left: .5rem;
+    font-size: .65rem; color: var(--black); font-weight: 700;
+    transition: width .6s cubic-bezier(.23,1,.32,1), opacity .2s;
+    white-space: nowrap;
+  }
+  .bar-amount { font-size: .72rem; color: var(--yellow); text-align: right; }
+
+  /* TREEMAP */
+  .treemap-wrap { display: none; }
+  .treemap-wrap.active { display: block; }
+  .treemap-grid {
+    display: grid;
+    gap: 3px;
+    width: 100%;
+    height: 440px;
+  }
+  .treemap-cell {
+    display: flex; flex-direction: column;
+    justify-content: flex-end; padding: .6rem;
+    cursor: pointer; transition: filter .2s;
+    overflow: hidden;
+    position: relative;
+  }
+  .treemap-cell:hover { filter: brightness(1.3); }
+  .treemap-cell-name { font-size: .65rem; letter-spacing: .05em; font-weight: 700; }
+  .treemap-cell-amt { font-size: .6rem; opacity: .8; margin-top: .15rem; }
+
+  /* NETWORK */
+  .network-wrap { display: none; }
+  .network-wrap.active { display: block; }
+  #network-canvas { width: 100%; height: 460px; background: #080808; border: 1px solid #1a1a1a; }
+  .network-hint {
+    font-size: .65rem; color: var(--light); margin-top: .75rem;
+    letter-spacing: .08em;
+  }
+
+  /* SIDEBAR */
+  .profile-sidebar { padding: 2rem; }
+
+  .sidebar-section { margin-bottom: 2rem; }
+  .sidebar-heading {
+    font-size: .6rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--yellow); margin-bottom: 1rem;
+    padding-bottom: .5rem; border-bottom: 1px solid #222;
+  }
+
+  .funding-breakdown {
+    display: flex; flex-direction: column; gap: .6rem;
+  }
+  .breakdown-row {
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .breakdown-label { font-size: .7rem; color: var(--light); flex: 1; }
+  .breakdown-bar-track {
+    width: 80px; height: 6px; background: #222;
+  }
+  .breakdown-bar { height: 100%; }
+  .breakdown-pct {
+    font-size: .7rem; color: var(--white); width: 32px; text-align: right;
+  }
+
+  .top-donors-list { display: flex; flex-direction: column; gap: 0; }
+  .top-donor-row {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .65rem 0; border-bottom: 1px solid #1a1a1a;
+    cursor: pointer; transition: all .2s;
+  }
+  .top-donor-row:hover { padding-left: .4rem; }
+  .donor-rank {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem; color: #333; width: 20px; flex-shrink: 0;
+  }
+  .donor-info { flex: 1; min-width: 0; }
+  .donor-name { font-size: .72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .donor-type { font-size: .6rem; color: var(--light); margin-top: .1rem; }
+  .donor-amount { font-size: .72rem; color: var(--yellow); flex-shrink: 0; }
+
+  .share-row {
+    display: flex; gap: .5rem; flex-wrap: wrap;
+  }
+  .share-btn {
+    background: none; border: 1px solid #333;
+    color: var(--light); font-family: 'DM Mono', monospace;
+    font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
+    padding: .4rem .8rem; cursor: pointer; transition: all .2s;
+  }
+  .share-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  .compare-btn {
+    width: 100%; background: none; border: 1px solid var(--yellow);
+    color: var(--yellow); font-family: 'DM Mono', monospace;
+    font-size: .72rem; letter-spacing: .12em; text-transform: uppercase;
+    padding: .75rem; cursor: pointer; transition: all .2s; margin-top: 1rem;
+  }
+  .compare-btn:hover { background: var(--yellow); color: var(--black); }
+
+  /* ══════════════════════════════════
+     SCREEN 4 — DONOR DETAIL
+  ══════════════════════════════════ */
+  #donor { padding-top: 56px; background: var(--black); }
+
+  .donor-header {
+    padding: 3rem 4rem 2.5rem;
+    border-bottom: 2px solid var(--yellow);
+    display: grid; grid-template-columns: 1fr auto;
+    align-items: flex-start; gap: 2rem;
+  }
+  .donor-eyebrow {
+    font-size: .6rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--yellow); margin-bottom: .75rem;
+  }
+  .donor-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem; line-height: .95; letter-spacing: .02em;
+    color: var(--white);
+  }
+  .donor-meta-row {
+    display: flex; gap: 2rem; margin-top: .75rem;
+    font-size: .7rem; color: var(--light);
+  }
+  .donor-meta-row strong { color: var(--white); }
+
+  .donor-total-block { text-align: right; }
+  .donor-total-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem; color: var(--yellow); line-height: 1;
+  }
+  .donor-total-sub { font-size: .65rem; letter-spacing: .15em; text-transform: uppercase; color: var(--light); }
+
+  .donor-body {
+    display: grid; grid-template-columns: 1fr 400px;
+  }
+
+  .donor-recipients {
+    padding: 2.5rem 3rem; border-right: 1px solid #222;
+  }
+  .section-label {
+    font-size: .6rem; letter-spacing: .25em; text-transform: uppercase;
+    color: var(--yellow); margin-bottom: 1.5rem;
+    display: flex; align-items: center; gap: .75rem;
+  }
+  .section-label::before { content: ''; display: block; width: 20px; height: 2px; background: var(--yellow); }
+
+  .recipient-row {
+    display: grid; grid-template-columns: auto 1fr auto auto;
+    align-items: center; gap: 1rem;
+    padding: 1rem 0; border-bottom: 1px solid #1a1a1a;
+    cursor: pointer; transition: all .2s;
+  }
+  .recipient-row:hover { padding-left: .5rem; background: #0d0d0d; padding-right: .5rem; }
+
+  .recipient-party-dot {
+    width: 10px; height: 10px; border-radius: 0; flex-shrink: 0;
+  }
+  .recipient-party-dot.dem { background: var(--dem); }
+  .recipient-party-dot.rep { background: var(--rep); }
+
+  .recipient-info { min-width: 0; }
+  .recipient-name {
+    font-family: 'Fraunces', serif; font-size: .95rem; font-weight: 700;
+  }
+  .recipient-meta { font-size: .65rem; color: var(--light); margin-top: .15rem; }
+
+  .recipient-bar-track {
+    width: 120px; height: 6px; background: #1a1a1a;
+  }
+  .recipient-bar-fill { height: 100%; background: var(--yellow); opacity: .7; }
+
+  .recipient-amount { font-size: .8rem; color: var(--yellow); text-align: right; min-width: 80px; }
+
+  .donor-stats-panel { padding: 2rem; }
+
+  .party-split {
+    margin-bottom: 2rem;
+  }
+  .split-bar-wrap {
+    height: 24px; display: flex; margin-top: .75rem;
+  }
+  .split-dem { background: var(--dem); height: 100%; display: flex; align-items: center; justify-content: center; font-size: .65rem; color: var(--white); font-weight: 700; }
+  .split-rep { background: var(--rep); height: 100%; display: flex; align-items: center; justify-content: center; font-size: .65rem; color: var(--white); font-weight: 700; }
+
+  /* ══════════════════════════════════
+     ANIMATIONS
+  ══════════════════════════════════ */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  .fade-up { animation: fadeUp .5s ease forwards; }
+  .fade-in { animation: fadeIn .4s ease forwards; }
+
+  /* stagger helpers */
+  .s1 { animation-delay: .05s; opacity: 0; }
+  .s2 { animation-delay: .15s; opacity: 0; }
+  .s3 { animation-delay: .25s; opacity: 0; }
+  .s4 { animation-delay: .35s; opacity: 0; }
+  .s5 { animation-delay: .45s; opacity: 0; }
+
+  /* ── BACK BUTTON ── */
+  .back-btn {
+    background: none; border: none;
+    color: var(--light); font-family: 'DM Mono', monospace;
+    font-size: .7rem; letter-spacing: .1em; text-transform: uppercase;
+    cursor: pointer; display: flex; align-items: center; gap: .4rem;
+    padding: .75rem 4rem; border-bottom: 1px solid #1a1a1a;
+    width: 100%; text-align: left;
+    transition: color .2s;
+  }
+  .back-btn:hover { color: var(--yellow); }
+  .back-btn::before { content: '←'; }
+
+  /* breadcrumb */
+  .breadcrumb {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .75rem 4rem; border-bottom: 1px solid #1a1a1a;
+    font-size: .65rem; color: var(--light);
+  }
+  .breadcrumb a { color: var(--light); text-decoration: none; cursor: pointer; }
+  .breadcrumb a:hover { color: var(--yellow); }
+  .breadcrumb span { color: var(--white); }
+  .breadcrumb-sep { color: #333; }
+
+  /* ── MISC ── */
+  .tag {
+    display: inline-block; font-size: .58rem; letter-spacing: .15em;
+    text-transform: uppercase; padding: .2rem .5rem;
+    border: 1px solid currentColor; margin-right: .3rem;
+  }
+  .tag.foreign { color: var(--yellow); }
+
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="goHome()">FOLLOW<span>THE</span>MONEY</div>
+  <div class="nav-search">
+    <span style="color:var(--light);font-size:.8rem">⌕</span>
+    <input type="text" placeholder="Search representatives..." id="nav-search-input" onkeydown="handleNavSearch(event)">
+  </div>
+  <div class="nav-links">
+    <a onclick="goHome()">Explore Map</a>
+    <a>Browse Reps</a>
+    <a>Top Donors</a>
+    <a>About</a>
+  </div>
+</nav>
+
+<!-- TOOLTIP -->
+<div class="map-tooltip" id="map-tooltip">
+  <div class="tt-name" id="tt-name"></div>
+  <div class="tt-party" id="tt-party"></div>
+  <div class="tt-hint">Click to see funding →</div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 1 — HOME
+══════════════════════════════ -->
+<div class="screen active" id="home">
+  <div class="hero">
+    <!-- LEFT -->
+    <div class="hero-left">
+      <div class="hero-eyebrow fade-up s1">Campaign Finance Transparency</div>
+      <h1 class="hero-title fade-up s2">
+        FOLLOW<br>
+        <span class="accent">THE</span>
+        MONEY
+      </h1>
+      <p class="hero-sub fade-up s3">
+        Find out exactly who is funding your elected representatives — and what they might want in return.
+      </p>
+
+      <div class="zip-block fade-up s4">
+        <span class="zip-label">Enter your ZIP code</span>
+        <div class="zip-row">
+          <input class="zip-input" type="text" maxlength="5" placeholder="20001" id="zip-input" onkeydown="handleZip(event)">
+          <button class="zip-btn" onclick="doZipSearch()">FIND MY REPS →</button>
+        </div>
+      </div>
+
+      <div class="or-divider fade-up s4">— or discover by —</div>
+      <div class="discover-links fade-up s5">
+        <div class="discover-chip" onclick="goResults('map')">Click the Map</div>
+        <div class="discover-chip" onclick="goProfile('warren')">Browse Senate</div>
+        <div class="discover-chip" onclick="goProfile('mccarthy')">Browse House</div>
+        <div class="discover-chip">Top Funded</div>
+      </div>
+    </div>
+
+    <!-- RIGHT — MAP -->
+    <div class="hero-right">
+      <div class="map-container">
+        <div class="map-label">Congressional Districts</div>
+        <div class="map-toggle">
+          <button class="active" onclick="setMapView(this,'house')">House</button>
+          <button onclick="setMapView(this,'senate')">Senate</button>
+        </div>
+        <svg id="us-map" viewBox="0 0 960 600" xmlns="http://www.w3.org/2000/svg">
+          <!-- Simplified US state paths for mockup -->
+          <!-- Northeast -->
+          <path class="state-path rep" d="M830 80 L860 80 L865 110 L835 115 Z" data-state="Maine" data-rep="Susan Collins" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M820 115 L840 110 L845 135 L820 138 Z" data-state="New Hampshire" data-rep="Jeanne Shaheen" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M800 130 L820 125 L822 145 L800 148 Z" data-state="Vermont" data-rep="Bernie Sanders" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M780 140 L810 135 L812 165 L778 168 Z" data-state="New York" data-rep="Chuck Schumer" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M812 165 L842 160 L844 185 L810 188 Z" data-state="Massachusetts" data-rep="Elizabeth Warren" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goProfile('warren')"/>
+          <path class="state-path dem" d="M800 188 L820 184 L822 205 L798 208 Z" data-state="Connecticut" data-rep="Chris Murphy" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M820 195 L838 191 L840 212 L818 215 Z" data-state="Rhode Island" data-rep="Jack Reed" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M780 200 L802 196 L804 225 L778 228 Z" data-state="New Jersey" data-rep="Bob Menendez" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M755 220 L780 215 L782 250 L752 255 Z" data-state="Pennsylvania" data-rep="Bob Casey" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M772 250 L795 245 L797 275 L770 278 Z" data-state="Delaware" data-rep="Tom Carper" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M752 268 L775 263 L777 292 L750 295 Z" data-state="Maryland" data-rep="Chris Van Hollen" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+
+          <!-- Southeast -->
+          <path class="state-path rep" d="M730 280 L758 275 L762 320 L728 325 Z" data-state="Virginia" data-rep="Mark Warner" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M710 320 L740 315 L744 365 L708 370 Z" data-state="North Carolina" data-rep="Thom Tillis" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M690 365 L720 360 L724 410 L688 415 Z" data-state="South Carolina" data-rep="Lindsey Graham" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M660 385 L692 380 L696 435 L658 440 Z" data-state="Georgia" data-rep="Jon Ossoff" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M640 400 L665 395 L668 455 L637 460 Z" data-state="Florida" data-rep="Marco Rubio" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M605 350 L638 344 L642 395 L602 400 Z" data-state="Alabama" data-rep="Tommy Tuberville" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M570 340 L606 334 L610 385 L568 390 Z" data-state="Mississippi" data-rep="Cindy Hyde-Smith" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M680 300 L712 294 L716 322 L678 328 Z" data-state="West Virginia" data-rep="Joe Manchin" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+
+          <!-- Midwest -->
+          <path class="state-path rep" d="M540 220 L580 214 L584 265 L538 270 Z" data-state="Ohio" data-rep="Sherrod Brown" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M500 218 L542 212 L546 260 L498 265 Z" data-state="Indiana" data-rep="Mike Braun" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M455 200 L500 194 L504 242 L453 248 Z" data-state="Illinois" data-rep="Dick Durbin" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M415 185 L457 178 L461 228 L413 234 Z" data-state="Wisconsin" data-rep="Tammy Baldwin" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M375 170 L417 163 L421 213 L373 219 Z" data-state="Minnesota" data-rep="Amy Klobuchar" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M455 248 L500 242 L504 295 L453 300 Z" data-state="Kentucky" data-rep="Mitch McConnell" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goProfile('mcconnell')"/>
+          <path class="state-path rep" d="M415 230 L457 223 L461 270 L413 276 Z" data-state="Michigan" data-rep="Debbie Stabenow" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M500 265 L540 258 L544 308 L498 314 Z" data-state="Tennessee" data-rep="Marsha Blackburn" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M375 220 L415 213 L419 268 L373 274 Z" data-state="Iowa" data-rep="Chuck Grassley" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M335 215 L377 208 L381 258 L333 264 Z" data-state="South Dakota" data-rep="John Thune" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M335 165 L377 158 L381 208 L333 215 Z" data-state="North Dakota" data-rep="Kevin Cramer" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M295 218 L337 211 L341 265 L293 272 Z" data-state="Nebraska" data-rep="Deb Fischer" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M375 268 L415 261 L419 318 L373 324 Z" data-state="Missouri" data-rep="Josh Hawley" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M335 268 L377 261 L381 318 L333 325 Z" data-state="Kansas" data-rep="Jerry Moran" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M295 295 L337 288 L341 348 L293 355 Z" data-state="Oklahoma" data-rep="James Lankford" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M415 318 L455 311 L459 368 L413 375 Z" data-state="Arkansas" data-rep="John Boozman" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M295 355 L340 348 L344 410 L293 417 Z" data-state="Texas" data-rep="Ted Cruz" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goProfile('cruz')"/>
+          <path class="state-path rep" d="M455 368 L500 361 L504 418 L453 425 Z" data-state="Louisiana" data-rep="Bill Cassidy" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+
+          <!-- West -->
+          <path class="state-path rep" d="M255 220 L297 213 L301 275 L253 282 Z" data-state="Colorado" data-rep="John Hickenlooper" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M215 240 L257 233 L261 298 L213 305 Z" data-state="Utah" data-rep="Mitt Romney" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M175 258 L217 251 L221 318 L173 325 Z" data-state="Nevada" data-rep="Catherine Cortez Masto" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M215 180 L257 173 L261 235 L213 242 Z" data-state="Wyoming" data-rep="Cynthia Lummis" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M175 175 L217 168 L221 242 L173 249 Z" data-state="Idaho" data-rep="Mike Crapo" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M255 155 L297 148 L301 215 L253 222 Z" data-state="Montana" data-rep="Jon Tester" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M215 138 L257 131 L261 172 L213 179 Z" data-state="Oregon" data-rep="Ron Wyden" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M165 100 L215 93 L219 175 L163 182 Z" data-state="Washington" data-rep="Patty Murray" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M105 260 L175 253 L179 380 L103 388 Z" data-state="California" data-rep="Dianne Feinstein" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M173 325 L215 318 L219 382 L171 389 Z" data-state="Arizona" data-rep="Mark Kelly" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path rep" d="M213 372 L255 365 L259 422 L211 429 Z" data-state="New Mexico" data-rep="Martin Heinrich" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+
+          <!-- Alaska & Hawaii insets -->
+          <path class="state-path rep" d="M100 460 L160 455 L165 510 L98 515 Z" data-state="Alaska" data-rep="Lisa Murkowski" data-party="rep" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+          <path class="state-path dem" d="M200 490 L245 486 L248 520 L198 524 Z" data-state="Hawaii" data-rep="Mazie Hirono" data-party="dem" onmousemove="showTip(event,this)" onmouseleave="hideTip()" onclick="goResults('map')"/>
+
+          <!-- Inset labels -->
+          <text x="125" y="548" font-family="'DM Mono',monospace" font-size="9" fill="#444">AK</text>
+          <text x="215" y="548" font-family="'DM Mono',monospace" font-size="9" fill="#444">HI</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker">
+    <div class="ticker-label">LATEST FILINGS</div>
+    <div class="ticker-track" id="ticker-content">
+      <span>Ted Cruz (R-TX) — $2.1M from Energy sector this quarter</span>
+      <span>Elizabeth Warren (D-MA) — $890K from Tech industry</span>
+      <span>Mitch McConnell (R-KY) — $3.4M total raised in 2024 cycle</span>
+      <span>Mark Kelly (D-AZ) — $1.2M from Defense contractors</span>
+      <span>Marco Rubio (R-FL) — $1.8M from Financial Services</span>
+      <span>Amy Klobuchar (D-MN) — $650K from Agriculture sector</span>
+      <span>Ted Cruz (R-TX) — $2.1M from Energy sector this quarter</span>
+      <span>Elizabeth Warren (D-MA) — $890K from Tech industry</span>
+      <span>Mitch McConnell (R-KY) — $3.4M total raised in 2024 cycle</span>
+      <span>Mark Kelly (D-AZ) — $1.2M from Defense contractors</span>
+      <span>Marco Rubio (R-FL) — $1.8M from Financial Services</span>
+      <span>Amy Klobuchar (D-MN) — $650K from Agriculture sector</span>
+    </div>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+    <div class="stat-cell">
+      <span class="stat-number">$14.4B</span>
+      <div class="stat-label">Total 2024 Cycle Spending</div>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-number">535</span>
+      <div class="stat-label">Federal Representatives Tracked</div>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-number">142K</span>
+      <div class="stat-label">Unique Donor Entities</div>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-number">Daily</span>
+      <div class="stat-label">FEC Data Refresh Rate</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 2 — RESULTS
+══════════════════════════════ -->
+<div class="screen" id="results">
+  <button class="back-btn" onclick="goHome()">Back to map</button>
+  <div class="results-header">
+    <div>
+      <div class="results-zip-display">ZIP <span id="results-zip-display">20001</span></div>
+      <div class="results-sub">Washington, D.C. — Your federal representatives</div>
+    </div>
+    <div style="font-size:.7rem; color:var(--light)">Data as of March 2026 · Source: FEC</div>
+  </div>
+  <div class="results-grid">
+    <!-- House Rep -->
+    <div class="rep-card" onclick="goProfile('norton')">
+      <div class="rep-card-party-bar dem"></div>
+      <div class="rep-card-chamber">U.S. House · At-Large Delegate</div>
+      <div class="rep-card-name">Eleanor Holmes Norton</div>
+      <div class="rep-card-meta"><span class="dem">Democrat</span> · District of Columbia</div>
+      <div class="rep-card-funding">
+        <div class="rep-card-funding-label">2024 Cycle Total Raised</div>
+        <div class="rep-card-total">$1.2M</div>
+        <div class="rep-card-top-donors">
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">Comcast Corp</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:80%"></div></div>
+            <div class="donor-mini-amt">$48K</div>
+          </div>
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">American Federation of Teachers</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:60%"></div></div>
+            <div class="donor-mini-amt">$35K</div>
+          </div>
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">AFSCME</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:45%"></div></div>
+            <div class="donor-mini-amt">$28K</div>
+          </div>
+        </div>
+      </div>
+      <div class="rep-card-cta">View full funding profile</div>
+    </div>
+    <!-- Senator 1 -->
+    <div class="rep-card" onclick="goProfile('warren')">
+      <div class="rep-card-party-bar dem"></div>
+      <div class="rep-card-chamber">U.S. Senate · Class II</div>
+      <div class="rep-card-name">Elizabeth Warren</div>
+      <div class="rep-card-meta"><span class="dem">Democrat</span> · Massachusetts</div>
+      <div class="rep-card-funding">
+        <div class="rep-card-funding-label">2024 Cycle Total Raised</div>
+        <div class="rep-card-total">$28.4M</div>
+        <div class="rep-card-top-donors">
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">Alphabet / Google</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:85%"></div></div>
+            <div class="donor-mini-amt">$312K</div>
+          </div>
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">Harvard University</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:65%"></div></div>
+            <div class="donor-mini-amt">$241K</div>
+          </div>
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">ActBlue</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:90%"></div></div>
+            <div class="donor-mini-amt">$9.8M</div>
+          </div>
+        </div>
+      </div>
+      <div class="rep-card-cta">View full funding profile</div>
+    </div>
+    <!-- Senator 2 -->
+    <div class="rep-card" onclick="goProfile('mcconnell')">
+      <div class="rep-card-party-bar rep"></div>
+      <div class="rep-card-chamber">U.S. Senate · Class III</div>
+      <div class="rep-card-name">Mitch McConnell</div>
+      <div class="rep-card-meta"><span class="rep">Republican</span> · Kentucky</div>
+      <div class="rep-card-funding">
+        <div class="rep-card-funding-label">2024 Cycle Total Raised</div>
+        <div class="rep-card-total">$42.1M</div>
+        <div class="rep-card-top-donors">
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">Senate Leadership Fund</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:100%"></div></div>
+            <div class="donor-mini-amt">$18.2M</div>
+          </div>
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">Koch Industries PAC</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:55%"></div></div>
+            <div class="donor-mini-amt">$890K</div>
+          </div>
+          <div class="donor-mini-row">
+            <div class="donor-mini-name">US Chamber of Commerce</div>
+            <div class="donor-mini-bar-track"><div class="donor-mini-bar" style="width:42%"></div></div>
+            <div class="donor-mini-amt">$650K</div>
+          </div>
+        </div>
+      </div>
+      <div class="rep-card-cta">View full funding profile</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 3 — PROFILE
+══════════════════════════════ -->
+<div class="screen" id="profile">
+  <div class="breadcrumb">
+    <a onclick="goHome()">Home</a>
+    <span class="breadcrumb-sep">›</span>
+    <a onclick="goResults('back')">Results</a>
+    <span class="breadcrumb-sep">›</span>
+    <span id="profile-breadcrumb">Elizabeth Warren</span>
+  </div>
+
+  <!-- HEADER -->
+  <div class="profile-header dem" id="profile-header">
+    <div class="profile-photo-wrap">
+      <div class="profile-photo-placeholder dem" id="profile-initials">EW</div>
+    </div>
+    <div class="profile-identity">
+      <div class="profile-chamber-tag" id="profile-chamber">U.S. Senate · Massachusetts · Class II</div>
+      <div class="profile-name" id="profile-name">Elizabeth Warren</div>
+      <div class="profile-meta">
+        <span class="party-tag dem" id="profile-party">Democrat</span>
+        <span id="profile-term">Term: 2019–2025</span>
+        <span id="profile-next">Next Election: Nov 2024</span>
+        <span>Committees: Banking, Finance, HELP</span>
+      </div>
+    </div>
+    <div class="profile-hero-numbers">
+      <div class="profile-total-amount" id="profile-total">$28.4M</div>
+      <div class="profile-total-label">2024 Cycle Total Raised</div>
+      <div style="font-size:.65rem;color:var(--light);margin-top:.4rem">from 142,810 donors</div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="cycle-toggle-bar">
+    <div class="cycle-toggle">
+      <button class="cycle-btn active" onclick="setCycle(this,'2024')">2024 Cycle</button>
+      <button class="cycle-btn" onclick="setCycle(this,'2022')">2022</button>
+      <button class="cycle-btn" onclick="setCycle(this,'career')">Full Career</button>
+    </div>
+    <div class="viz-tab-row">
+      <button class="viz-tab active" onclick="setViz(this,'donut')">Donut</button>
+      <button class="viz-tab" onclick="setViz(this,'bar')">Bar Chart</button>
+      <button class="viz-tab" onclick="setViz(this,'treemap')">Treemap</button>
+      <button class="viz-tab" onclick="setViz(this,'network')">Network</button>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="profile-body">
+    <!-- VIZ PANEL -->
+    <div class="viz-panel">
+      <div class="viz-title" id="viz-title">Funding by Industry</div>
+
+      <!-- DONUT -->
+      <div class="donut-wrap active" id="viz-donut">
+        <div class="donut-svg-wrap">
+          <svg width="220" height="220" viewBox="0 0 220 220" id="donut-svg"></svg>
+          <div class="donut-center-text">
+            <span class="donut-center-amount">$28.4M</span>
+            <span class="donut-center-label">Total Raised</span>
+          </div>
+        </div>
+        <div class="donut-legend" id="donut-legend"></div>
+      </div>
+
+      <!-- BAR -->
+      <div class="bar-chart" id="viz-bar"></div>
+
+      <!-- TREEMAP -->
+      <div class="treemap-wrap" id="viz-treemap">
+        <div class="treemap-grid" id="treemap-grid" style="grid-template-columns: 2fr 1.2fr 1fr; grid-template-rows: 1.5fr 1fr;"></div>
+      </div>
+
+      <!-- NETWORK -->
+      <div class="network-wrap" id="viz-network">
+        <canvas id="network-canvas"></canvas>
+        <div class="network-hint">⊙ Drag nodes to explore · Click donor to see all they fund</div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="profile-sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Funding Breakdown</div>
+        <div class="funding-breakdown">
+          <div class="breakdown-row">
+            <div class="breakdown-label">Individual Donors</div>
+            <div class="breakdown-bar-track"><div class="breakdown-bar" style="width:72%;background:var(--yellow)"></div></div>
+            <div class="breakdown-pct">72%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label">PACs / Super PACs</div>
+            <div class="breakdown-bar-track"><div class="breakdown-bar" style="width:18%;background:#e63022"></div></div>
+            <div class="breakdown-pct">18%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label">Small Donors (&lt;$200)</div>
+            <div class="breakdown-bar-track"><div class="breakdown-bar" style="width:54%;background:#1a4fd6"></div></div>
+            <div class="breakdown-pct">54%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label">Foreign-Connected <span class="tag foreign">FLAGGED</span></div>
+            <div class="breakdown-bar-track"><div class="breakdown-bar" style="width:2%;background:var(--yellow)"></div></div>
+            <div class="breakdown-pct">2%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Top Donors</div>
+        <div class="top-donors-list" id="top-donors-list"></div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Share & Export</div>
+        <div class="share-row">
+          <button class="share-btn">Copy Link</button>
+          <button class="share-btn">Export CSV</button>
+          <button class="share-btn">Export JSON</button>
+          <button class="share-btn">Embed</button>
+        </div>
+        <button class="compare-btn">+ Compare with Another Rep</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     SCREEN 4 — DONOR
+══════════════════════════════ -->
+<div class="screen" id="donor">
+  <div class="breadcrumb">
+    <a onclick="goHome()">Home</a>
+    <span class="breadcrumb-sep">›</span>
+    <a onclick="showScreen('profile')">Elizabeth Warren</a>
+    <span class="breadcrumb-sep">›</span>
+    <span id="donor-breadcrumb">ActBlue</span>
+  </div>
+
+  <div class="donor-header">
+    <div>
+      <div class="donor-eyebrow">Funding Source · Political Action Committee</div>
+      <div class="donor-title" id="donor-title">ActBlue</div>
+      <div class="donor-meta-row">
+        <span>Type: <strong>Non-connected PAC</strong></span>
+        <span>Location: <strong>Cambridge, MA</strong></span>
+        <span>FEC ID: <strong>C00401224</strong></span>
+        <span>Active Since: <strong>2004</strong></span>
+      </div>
+    </div>
+    <div class="donor-total-block">
+      <div class="donor-total-num">$842M</div>
+      <div class="donor-total-sub">Total Political Spending · 2024 Cycle</div>
+    </div>
+  </div>
+
+  <div class="donor-body">
+    <div class="donor-recipients">
+      <div class="section-label">All Recipients — 2024 Cycle</div>
+      <div id="donor-recipients-list"></div>
+    </div>
+
+    <div class="donor-stats-panel">
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Party Split</div>
+        <div class="party-split">
+          <div style="font-size:.72rem;color:var(--light)">All donations by party affiliation</div>
+          <div class="split-bar-wrap" style="margin-top:.75rem">
+            <div class="split-dem" style="width:98%">98% D</div>
+            <div class="split-rep" style="width:2%"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:.4rem;font-size:.65rem">
+            <span style="color:var(--dem)">$824M to Democrats</span>
+            <span style="color:var(--rep)">$18M to Republicans</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Top Industries Funded</div>
+        <div style="display:flex;flex-direction:column;gap:.6rem">
+          <div class="breakdown-row">
+            <div class="breakdown-label" style="font-size:.68rem">Senate Campaigns</div>
+            <div class="breakdown-bar-track"><div class="breakdown-bar" style="width:85%;background:var(--dem)"></div></div>
+            <div class="breakdown-pct">42%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label" style="font-size:.68rem">House Campaigns</div>
+            <div class="breakdown-bar-track"><div class="breakdown-bar" style="width:62%;background:var(--dem)"></div></div>
+            <div class="breakdown-pct">35%</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label" style="font-size:.68rem">Presidential</div>
+            <div class="breakdown-label" style="font-size:.68rem"></div>
+            <div class="breakdown-bar-track"><div class="breakdown-bar" style="width:35%;background:var(--dem)"></div></div>
+            <div class="breakdown-pct">23%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">History</div>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;padding:.4rem 0;border-bottom:1px solid #1a1a1a">
+            <span style="color:var(--light)">2022 Cycle</span>
+            <span style="color:var(--yellow)">$621M</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;padding:.4rem 0;border-bottom:1px solid #1a1a1a">
+            <span style="color:var(--light)">2020 Cycle</span>
+            <span style="color:var(--yellow)">$1.42B</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;padding:.4rem 0;border-bottom:1px solid #1a1a1a">
+            <span style="color:var(--light)">2018 Cycle</span>
+            <span style="color:var(--yellow)">$294M</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-heading">Share & Export</div>
+        <div class="share-row">
+          <button class="share-btn">Copy Link</button>
+          <button class="share-btn">Export CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const INDUSTRIES = [
+  { name: "Tech / Internet", pct: 28, amt: "$7.95M", color: "#4e9af1" },
+  { name: "Finance / Banking", pct: 18, amt: "$5.11M", color: "#f5c518" },
+  { name: "Law / Lobbying", pct: 14, amt: "$3.97M", color: "#e63022" },
+  { name: "Labor Unions", pct: 12, amt: "$3.41M", color: "#2ecc71" },
+  { name: "Education", pct: 11, amt: "$3.12M", color: "#9b59b6" },
+  { name: "Healthcare", pct: 9, amt: "$2.56M", color: "#e67e22" },
+  { name: "Other", pct: 8, amt: "$2.27M", color: "#555" },
+];
+
+const TOP_DONORS_WARREN = [
+  { name: "ActBlue", type: "Non-connected PAC", amt: "$9.8M" },
+  { name: "Alphabet / Google", type: "Corporate PAC", amt: "$312K" },
+  { name: "Harvard University", type: "Education", amt: "$241K" },
+  { name: "Microsoft Corp", type: "Corporate PAC", amt: "$198K" },
+  { name: "Comcast Corp", type: "Corporate PAC", amt: "$187K" },
+  { name: "Apple Inc", type: "Corporate PAC", amt: "$165K" },
+  { name: "EMILY's List", type: "PAC", amt: "$152K" },
+];
+
+const TOP_DONORS_MCCONNELL = [
+  { name: "Senate Leadership Fund", type: "Super PAC", amt: "$18.2M" },
+  { name: "Koch Industries PAC", type: "Corporate PAC", amt: "$890K" },
+  { name: "US Chamber of Commerce", type: "Trade Association", amt: "$650K" },
+  { name: "American Crossroads", type: "Super PAC", amt: "$580K" },
+  { name: "NFIB PAC", type: "Small Business PAC", amt: "$412K" },
+  { name: "WinRed", type: "Non-connected PAC", amt: "$380K" },
+  { name: "Chevron Corp PAC", type: "Corporate PAC", amt: "$290K" },
+];
+
+const ACTBLUE_RECIPIENTS = [
+  { name: "Elizabeth Warren", party: "dem", state: "MA · Senate", amt: "$9.8M", pct: 100 },
+  { name: "Bernie Sanders", party: "dem", state: "VT · Senate", amt: "$8.2M", pct: 84 },
+  { name: "John Fetterman", party: "dem", state: "PA · Senate", amt: "$6.5M", pct: 66 },
+  { name: "Raphael Warnock", party: "dem", state: "GA · Senate", amt: "$5.8M", pct: 59 },
+  { name: "Mark Kelly", party: "dem", state: "AZ · Senate", amt: "$4.2M", pct: 43 },
+  { name: "Amy McGrath", party: "dem", state: "KY · House", amt: "$3.8M", pct: 39 },
+  { name: "Cheri Bustos", party: "dem", state: "IL · House", amt: "$2.1M", pct: 21 },
+];
+
+// ── PROFILES ──────────────────────────────────────────────────────────
+const PROFILES = {
+  warren: {
+    name: "Elizabeth Warren", initials: "EW", party: "dem",
+    chamber: "U.S. Senate · Massachusetts · Class II",
+    partyLabel: "Democrat", term: "Term: 2019–2025", next: "Next Election: Nov 2026",
+    total: "$28.4M", donors: TOP_DONORS_WARREN,
+  },
+  mcconnell: {
+    name: "Mitch McConnell", initials: "MM", party: "rep",
+    chamber: "U.S. Senate · Kentucky · Class II",
+    partyLabel: "Republican", term: "Term: 2021–2027", next: "Next Election: Nov 2026",
+    total: "$42.1M", donors: TOP_DONORS_MCCONNELL,
+  },
+  cruz: {
+    name: "Ted Cruz", initials: "TC", party: "rep",
+    chamber: "U.S. Senate · Texas · Class I",
+    partyLabel: "Republican", term: "Term: 2019–2025", next: "Next Election: Nov 2024",
+    total: "$36.8M", donors: TOP_DONORS_MCCONNELL,
+  },
+  norton: {
+    name: "Eleanor Holmes Norton", initials: "EN", party: "dem",
+    chamber: "U.S. House · D.C. At-Large Delegate",
+    partyLabel: "Democrat", term: "Term: 2023–2025", next: "Next Election: Nov 2024",
+    total: "$1.2M", donors: TOP_DONORS_WARREN,
+  },
+};
+
+// ── NAVIGATION ────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goHome() { showScreen('home'); }
+
+function handleZip(e) { if (e.key === 'Enter') doZipSearch(); }
+function handleNavSearch(e) {
+  if (e.key === 'Enter') {
+    const v = e.target.value.trim().toLowerCase();
+    if (v.includes('warren')) goProfile('warren');
+    else if (v.includes('mcconnell') || v.includes('mitch')) goProfile('mcconnell');
+    else if (v.includes('cruz') || v.includes('ted')) goProfile('cruz');
+    else goResults('search');
+  }
+}
+
+function doZipSearch() {
+  const zip = document.getElementById('zip-input').value.trim() || '20001';
+  goResults(zip);
+}
+
+function goResults(zip) {
+  const display = typeof zip === 'string' && zip.match(/^\d{5}$/) ? zip : '20001';
+  document.getElementById('results-zip-display').textContent = display;
+  showScreen('results');
+}
+
+let currentProfile = 'warren';
+function goProfile(key) {
+  currentProfile = key;
+  const p = PROFILES[key] || PROFILES.warren;
+  // Header
+  const header = document.getElementById('profile-header');
+  header.className = 'profile-header ' + p.party;
+  document.getElementById('profile-initials').textContent = p.initials;
+  document.getElementById('profile-initials').className = 'profile-photo-placeholder ' + p.party;
+  document.getElementById('profile-chamber').textContent = p.chamber;
+  document.getElementById('profile-name').textContent = p.name;
+  document.getElementById('profile-total').textContent = p.total;
+  document.getElementById('profile-party').textContent = p.partyLabel;
+  document.getElementById('profile-party').className = 'party-tag ' + p.party;
+  document.getElementById('profile-term').textContent = p.term;
+  document.getElementById('profile-next').textContent = p.next;
+  document.getElementById('profile-breadcrumb').textContent = p.name;
+
+  // Reset viz to donut
+  setViz(document.querySelector('.viz-tab'), 'donut');
+  document.querySelectorAll('.viz-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+
+  // Render donors sidebar
+  renderTopDonors(p.donors);
+
+  showScreen('profile');
+  buildDonut();
+  buildBars();
+  buildTreemap();
+  setTimeout(buildNetwork, 100);
+}
+
+function goDonor(name) {
+  document.getElementById('donor-title').textContent = name;
+  document.getElementById('donor-breadcrumb').textContent = name;
+  renderRecipients();
+  showScreen('donor');
+}
+
+// ── MAP TOOLTIP ───────────────────────────────────────────────────────
+function showTip(e, el) {
+  const tip = document.getElementById('map-tooltip');
+  const party = el.dataset.party;
+  document.getElementById('tt-name').textContent = el.dataset.state + ' — ' + el.dataset.rep;
+  const partyEl = document.getElementById('tt-party');
+  partyEl.textContent = party === 'dem' ? 'Democrat' : 'Republican';
+  partyEl.className = 'tt-party ' + party;
+  tip.style.display = 'block';
+  tip.style.left = (e.clientX + 16) + 'px';
+  tip.style.top = (e.clientY - 10) + 'px';
+}
+function hideTip() { document.getElementById('map-tooltip').style.display = 'none'; }
+function setMapView(btn, view) {
+  document.querySelectorAll('.map-toggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── VIZ CONTROLS ─────────────────────────────────────────────────────
+function setCycle(btn, cycle) {
+  document.querySelectorAll('.cycle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function setViz(btn, viz) {
+  document.querySelectorAll('.viz-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('viz-donut').className = 'donut-wrap' + (viz==='donut' ? ' active' : '');
+  document.getElementById('viz-bar').className = 'bar-chart' + (viz==='bar' ? ' active' : '');
+  document.getElementById('viz-treemap').className = 'treemap-wrap' + (viz==='treemap' ? ' active' : '');
+  document.getElementById('viz-network').className = 'network-wrap' + (viz==='network' ? ' active' : '');
+
+  const titles = { donut: 'Funding by Industry', bar: 'Top Industries — Bar Chart', treemap: 'Funding Treemap', network: 'Donor Network Graph' };
+  document.getElementById('viz-title').textContent = titles[viz] || '';
+  if (viz === 'network') setTimeout(buildNetwork, 50);
+}
+
+// ── DONUT ─────────────────────────────────────────────────────────────
+function buildDonut() {
+  const svg = document.getElementById('donut-svg');
+  svg.innerHTML = '';
+  const cx = 110, cy = 110, ro = 100, ri = 65;
+  let startAngle = -Math.PI / 2;
+  const total = INDUSTRIES.reduce((s, d) => s + d.pct, 0);
+
+  INDUSTRIES.forEach(item => {
+    const angle = (item.pct / total) * 2 * Math.PI;
+    const endAngle = startAngle + angle;
+    const x1 = cx + ro * Math.cos(startAngle), y1 = cy + ro * Math.sin(startAngle);
+    const x2 = cx + ro * Math.cos(endAngle), y2 = cy + ro * Math.sin(endAngle);
+    const x3 = cx + ri * Math.cos(endAngle), y3 = cy + ri * Math.sin(endAngle);
+    const x4 = cx + ri * Math.cos(startAngle), y4 = cy + ri * Math.sin(startAngle);
+    const large = angle > Math.PI ? 1 : 0;
+    const d = `M ${x1} ${y1} A ${ro} ${ro} 0 ${large} 1 ${x2} ${y2} L ${x3} ${y3} A ${ri} ${ri} 0 ${large} 0 ${x4} ${y4} Z`;
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill', item.color);
+    path.setAttribute('opacity', '0.85');
+    path.style.cursor = 'pointer';
+    path.style.transition = 'opacity .2s, transform .2s';
+    path.addEventListener('mouseenter', () => { path.setAttribute('opacity','1'); path.style.transform = `scale(1.03)`; path.style.transformOrigin = `${cx}px ${cy}px`; });
+    path.addEventListener('mouseleave', () => { path.setAttribute('opacity','0.85'); path.style.transform = ''; });
+    svg.appendChild(path);
+    startAngle = endAngle;
+  });
+
+  // Legend
+  const legend = document.getElementById('donut-legend');
+  legend.innerHTML = '';
+  INDUSTRIES.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'legend-item';
+    row.innerHTML = `<div class="legend-swatch" style="background:${item.color}"></div><div class="legend-name">${item.name}</div><div class="legend-pct">${item.pct}%</div><div class="legend-amt">${item.amt}</div>`;
+    legend.appendChild(row);
+  });
+}
+
+// ── BAR CHART ─────────────────────────────────────────────────────────
+function buildBars() {
+  const container = document.getElementById('viz-bar');
+  container.innerHTML = '';
+  const max = Math.max(...INDUSTRIES.map(d => d.pct));
+  INDUSTRIES.slice(0, 6).forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'bar-row';
+    row.innerHTML = `
+      <div class="bar-industry">${item.name}</div>
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${(item.pct/max)*100}%;background:${item.color}">${item.pct}%</div>
+      </div>
+      <div class="bar-amount">${item.amt}</div>`;
+    container.appendChild(row);
+  });
+}
+
+// ── TREEMAP ───────────────────────────────────────────────────────────
+function buildTreemap() {
+  const grid = document.getElementById('treemap-grid');
+  grid.innerHTML = '';
+  const cells = [
+    { name: "Tech / Internet", amt: "$7.95M", color: "#1a3a5c", span: "span 1 / span 1" },
+    { name: "Finance", amt: "$5.11M", color: "#5c1a1a" },
+    { name: "Law", amt: "$3.97M", color: "#3a1a5c" },
+    { name: "Labor", amt: "$3.41M", color: "#1a5c2a" },
+    { name: "Education", amt: "$3.12M", color: "#5c4a1a" },
+    { name: "Healthcare", amt: "$2.56M", color: "#1a4a5c" },
+  ];
+  cells.forEach(c => {
+    const cell = document.createElement('div');
+    cell.className = 'treemap-cell';
+    cell.style.background = c.color;
+    cell.innerHTML = `<div class="treemap-cell-name">${c.name}</div><div class="treemap-cell-amt">${c.amt}</div>`;
+    cell.addEventListener('click', () => {});
+    grid.appendChild(cell);
+  });
+}
+
+// ── NETWORK ───────────────────────────────────────────────────────────
+function buildNetwork() {
+  const canvas = document.getElementById('network-canvas');
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * window.devicePixelRatio;
+  canvas.height = rect.height * window.devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = rect.width, H = rect.height;
+
+  const nodes = [
+    { id: 'center', label: 'E. Warren', x: W/2, y: H/2, r: 28, color: '#1a4fd6', textColor: '#fff', fixed: true },
+    { id: 'actblue', label: 'ActBlue', x: W/2-180, y: H/2-80, r: 20, color: '#f5c518', textColor: '#000', donor: true },
+    { id: 'google', label: 'Google', x: W/2+160, y: H/2-100, r: 14, color: '#4e9af1', textColor: '#fff', donor: true },
+    { id: 'harvard', label: 'Harvard', x: W/2+100, y: H/2+120, r: 12, color: '#9b59b6', textColor: '#fff', donor: true },
+    { id: 'msft', label: 'Microsoft', x: W/2-120, y: H/2+110, r: 11, color: '#2ecc71', textColor: '#000', donor: true },
+    { id: 'emilys', label: "EMILY's List", x: W/2+30, y: H/2-150, r: 10, color: '#e67e22', textColor: '#fff', donor: true },
+    { id: 'comcast', label: 'Comcast', x: W/2-200, y: H/2+40, r: 9, color: '#e63022', textColor: '#fff', donor: true },
+    { id: 'sanders', label: 'B. Sanders', x: W/2-160, y: H/2-170, r: 14, color: '#1a4fd6', textColor: '#fff' },
+    { id: 'fetterman', label: 'Fetterman', x: W/2+180, y: H/2+60, r: 12, color: '#1a4fd6', textColor: '#fff' },
+  ];
+
+  const edges = [
+    { from: 'actblue', to: 'center', w: 6 },
+    { from: 'google', to: 'center', w: 3 },
+    { from: 'harvard', to: 'center', w: 2.5 },
+    { from: 'msft', to: 'center', w: 2 },
+    { from: 'emilys', to: 'center', w: 2 },
+    { from: 'comcast', to: 'center', w: 1.5 },
+    { from: 'actblue', to: 'sanders', w: 3 },
+    { from: 'actblue', to: 'fetterman', w: 2.5 },
+  ];
+
+  let dragging = null, drag = {ox:0,oy:0,nx:0,ny:0};
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    // edges
+    edges.forEach(e => {
+      const a = nodes.find(n => n.id === e.from), b = nodes.find(n => n.id === e.to);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.lineWidth = e.w;
+      ctx.stroke();
+    });
+    // nodes
+    nodes.forEach(n => {
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+      ctx.fillStyle = n.color;
+      ctx.fill();
+      if (n.fixed) {
+        ctx.strokeStyle = '#f5c518'; ctx.lineWidth = 2; ctx.stroke();
+      }
+      ctx.fillStyle = n.textColor;
+      ctx.font = `${Math.max(9, n.r * 0.48)}px 'DM Mono', monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(n.label, n.x, n.y);
+    });
+  }
+
+  canvas.addEventListener('mousedown', e => {
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left), my = (e.clientY - r.top);
+    nodes.forEach(n => {
+      if (!n.fixed && Math.hypot(mx-n.x, my-n.y) < n.r + 4) {
+        dragging = n; drag = {ox: mx-n.x, oy: my-n.y};
+      }
+    });
+  });
+  canvas.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const r = canvas.getBoundingClientRect();
+    dragging.x = (e.clientX - r.left) - drag.ox;
+    dragging.y = (e.clientY - r.top) - drag.oy;
+    draw();
+  });
+  canvas.addEventListener('mouseup', () => { dragging = null; });
+  canvas.addEventListener('click', e => {
+    const r = canvas.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    nodes.forEach(n => {
+      if (n.donor && Math.hypot(mx-n.x, my-n.y) < n.r + 4) {
+        goDonor(n.label);
+      }
+    });
+  });
+
+  draw();
+}
+
+// ── TOP DONORS ────────────────────────────────────────────────────────
+function renderTopDonors(donors) {
+  const list = document.getElementById('top-donors-list');
+  list.innerHTML = '';
+  donors.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'top-donor-row';
+    row.innerHTML = `<div class="donor-rank">${i+1}</div><div class="donor-info"><div class="donor-name">${d.name}</div><div class="donor-type">${d.type}</div></div><div class="donor-amount">${d.amt}</div>`;
+    row.addEventListener('click', () => goDonor(d.name));
+    list.appendChild(row);
+  });
+}
+
+function renderRecipients() {
+  const list = document.getElementById('donor-recipients-list');
+  list.innerHTML = '';
+  ACTBLUE_RECIPIENTS.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'recipient-row';
+    row.innerHTML = `
+      <div class="recipient-party-dot ${r.party}"></div>
+      <div class="recipient-info">
+        <div class="recipient-name">${r.name}</div>
+        <div class="recipient-meta">${r.state}</div>
+      </div>
+      <div class="recipient-bar-track"><div class="recipient-bar-fill" style="width:${r.pct}%"></div></div>
+      <div class="recipient-amount">${r.amt}</div>`;
+    row.addEventListener('click', () => {
+      const key = r.name.toLowerCase().includes('warren') ? 'warren'
+        : r.name.toLowerCase().includes('sanders') ? 'mcconnell' : 'warren';
+      goProfile(key);
+    });
+    list.appendChild(row);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
+goProfile('warren');
+showScreen('home');
+buildDonut();
+buildBars();
+buildTreemap();
+</script>
+</body>
+</html>

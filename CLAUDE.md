@@ -348,6 +348,8 @@ GET /v1/export/{rep_id}.csv          # CSV export
 | 7 | Bill detail enrichment (Congress.gov /bill + /subjects) · Bill models · spaCy NLP classifier · Voting record UI |
 | 8 | CorrelationEngine statistics · AlignmentScore computation · Timeline + heatmap + side-by-side viz · Methodology page |
 | 9 | Public REST API · CSV/JSON export · Embeddable widget · Shareable URLs · Comparison view · Performance |
+| 10 | Full UI redesign — dark theme · Fixed nav with search · Interactive 50-state SVG map (click → /results?state=) · Dedicated /results page (handles ?q/?state/?chamber/?zip) · VizPanel tabs (Donut/Bar/Treemap/Network) · Sidebar (Funding Breakdown placeholder · Top Donors · Share & Export) · ZipForm · All 4 pages dark-themed |
+| 11 | Implement placeholders — Small Donors (<$200) breakdown · Foreign-Connected PAC data · Export JSON endpoint (`GET /v1/export/{rep_id}.json`) · Live ticker feed (latest FEC filings endpoint) · Live aggregated stats (total donors · total raised · total correlations) · Mobile/tablet responsive layout |
 
 ---
 

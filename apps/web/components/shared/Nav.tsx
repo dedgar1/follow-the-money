@@ -1,18 +1,94 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export function Nav() {
+  const router = useRouter();
+  const [q, setQ] = useState("");
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const trimmed = q.trim();
+    if (trimmed) router.push(`/results?q=${encodeURIComponent(trimmed)}`);
+  }
+
   return (
-    <nav className="border-b border-gray-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-gray-900">Follow the Money</span>
-          </Link>
-          <div className="flex items-center gap-6 text-sm text-gray-600">
-            <Link href="/?chamber=house" className="hover:text-gray-900">House</Link>
-            <Link href="/?chamber=senate" className="hover:text-gray-900">Senate</Link>
-          </div>
-        </div>
+    <nav
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        height: 56,
+        background: "var(--black)",
+        borderBottom: "2px solid var(--yellow)",
+        display: "flex",
+        alignItems: "center",
+        padding: "0 24px",
+        gap: 24,
+      }}
+    >
+      {/* Logo */}
+      <Link
+        href="/"
+        style={{
+          fontFamily: "var(--font-geist-mono), monospace",
+          fontWeight: 700,
+          fontSize: 13,
+          letterSpacing: "0.12em",
+          color: "var(--yellow)",
+          textDecoration: "none",
+          whiteSpace: "nowrap",
+          textTransform: "uppercase",
+        }}
+      >
+        Follow the Money
+      </Link>
+
+      {/* Search */}
+      <form onSubmit={handleSearch} style={{ flex: 1, maxWidth: 480, margin: "0 auto" }}>
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search representatives, donors..."
+          style={{
+            width: "100%",
+            background: "#1c1c1c",
+            border: "1px solid #444",
+            borderRadius: 4,
+            padding: "6px 12px",
+            color: "var(--white)",
+            fontSize: 12,
+            fontFamily: "inherit",
+            outline: "none",
+          }}
+        />
+      </form>
+
+      {/* Nav links */}
+      <div style={{ display: "flex", gap: 20, fontSize: 12, letterSpacing: "0.05em" }}>
+        <Link
+          href="/results?chamber=house"
+          style={{ color: "#888", textDecoration: "none", textTransform: "uppercase" }}
+        >
+          House
+        </Link>
+        <Link
+          href="/results?chamber=senate"
+          style={{ color: "#888", textDecoration: "none", textTransform: "uppercase" }}
+        >
+          Senate
+        </Link>
+        <Link
+          href="/docs/methodology"
+          style={{ color: "#888", textDecoration: "none", textTransform: "uppercase" }}
+        >
+          Methodology
+        </Link>
       </div>
     </nav>
   );

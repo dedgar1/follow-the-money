@@ -77,7 +77,7 @@ interface Props {
 export function DonutChart({ data, size = 280 }: Props) {
   if (!data.length) {
     return (
-      <div className="flex h-[200px] items-center justify-center text-sm text-gray-400">
+      <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#444" }}>
         No funding data available
       </div>
     );
@@ -116,7 +116,7 @@ export function DonutChart({ data, size = 280 }: Props) {
             key={item.industry}
             d={path}
             fill={color}
-            stroke="white"
+            stroke="var(--black)"
             strokeWidth={2}
           />
         ))}
@@ -126,7 +126,7 @@ export function DonutChart({ data, size = 280 }: Props) {
           y={cy - 8}
           textAnchor="middle"
           fontSize={11}
-          fill="#6b7280"
+          fill="#555"
         >
           Total raised
         </text>
@@ -136,24 +136,30 @@ export function DonutChart({ data, size = 280 }: Props) {
           textAnchor="middle"
           fontSize={16}
           fontWeight={600}
-          fill="#111827"
+          fill="var(--yellow)"
         >
           {formatDollars(total)}
         </text>
       </svg>
 
       {/* Legend */}
-      <ul className="mt-3 space-y-1.5">
+      <ul style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6, listStyle: "none" }}>
         {data.slice(0, 6).map((d) => (
-          <li key={d.industry} className="flex items-center gap-2 text-xs text-gray-600">
+          <li key={d.industry} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
             <span
-              className="inline-block h-2.5 w-2.5 flex-shrink-0 rounded-sm"
-              style={{ background: colorFor(d.industry) }}
+              style={{
+                display: "inline-block",
+                width: 10,
+                height: 10,
+                flexShrink: 0,
+                borderRadius: 2,
+                background: colorFor(d.industry),
+              }}
             />
-            <span className="flex-1 truncate">
+            <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "#888", textTransform: "capitalize" }}>
               {INDUSTRY_LABEL[d.industry] ?? d.industry}
             </span>
-            <span className="font-medium text-gray-800">
+            <span style={{ fontWeight: 600, color: "var(--white)" }}>
               {formatDollars(d.total_cents)}
             </span>
           </li>

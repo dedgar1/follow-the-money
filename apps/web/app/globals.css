@@ -1,13 +1,23 @@
 @import "tailwindcss";
 
+/* ── Design tokens ────────────────────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --black:  #0a0a0a;
+  --white:  #f5f0e8;
+  --yellow: #f5c518;
+  --gray:   #1c1c1c;
+  --mid:    #444;
+  --light:  #888;
+  --dem:    #1a4fd6;
+  --rep:    #e63022;
 
-  /* Party colors — used throughout the platform */
-  --color-democrat: #1a4fd6;
-  --color-republican: #e63022;
+  /* kept for any legacy references */
+  --color-democrat:    #1a4fd6;
+  --color-republican:  #e63022;
   --color-independent: #7c3aed;
+
+  --background: #0a0a0a;
+  --foreground: #f5f0e8;
 }
 
 @theme inline {
@@ -17,15 +27,55 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, sans-serif;
+  background: var(--black);
+  color: var(--white);
+  font-family: var(--font-geist-mono), 'Courier New', monospace;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #333 transparent;
+}
+
+/* ── US Map state paths ───────────────────────────────────────────────────── */
+.state-path {
+  fill: #1a1a1a;
+  stroke: #333;
+  stroke-width: 0.8;
+  transition: fill 0.2s, stroke 0.2s, stroke-width 0.2s;
+  cursor: pointer;
+}
+.state-path:hover          { fill: #2a2a2a; stroke: var(--yellow); stroke-width: 1.4; }
+.state-path.dem            { fill: #0d2a5e; }
+.state-path.rep            { fill: #5e0d0d; }
+.state-path.split          { fill: #2a1f00; }
+.state-path.dem:hover      { fill: var(--dem); stroke: var(--yellow); }
+.state-path.rep:hover      { fill: var(--rep); stroke: var(--yellow); }
+.state-path.split:hover    { fill: #888;       stroke: var(--yellow); }
+
+/* ── Ticker scroll ───────────────────────────────────────────────────────── */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-track { animation: ticker-scroll 35s linear infinite; }
+
+/* ── Entrance animations ─────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fadeUp 0.5s ease forwards; }
+.s1 { animation-delay: 0.05s; opacity: 0; }
+.s2 { animation-delay: 0.15s; opacity: 0; }
+.s3 { animation-delay: 0.25s; opacity: 0; }
+.s4 { animation-delay: 0.35s; opacity: 0; }
+.s5 { animation-delay: 0.45s; opacity: 0; }
+
+/* ── Viz tab active underline ─────────────────────────────────────────────── */
+.viz-tab-active {
+  border-color: var(--white) !important;
+  color: var(--white) !important;
 }

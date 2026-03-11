@@ -30,7 +30,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Nav />
+        <div style={{ paddingTop: 56 }}>
         {children}
+        </div>
       </body>
     </html>
   );

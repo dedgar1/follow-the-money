@@ -9,6 +9,7 @@ vi.mock("@/lib/api/client", () => ({
     getRepresentative: vi.fn().mockResolvedValue(null),
     getDonor: vi.fn().mockResolvedValue(null),
     getDonorRecipients: vi.fn().mockResolvedValue([]),
+    getZipReps: vi.fn().mockResolvedValue([]),
   },
   formatDollars: (cents: number) => `$${(cents / 100).toFixed(0)}`,
   PARTY_LABEL: { D: "Democrat", R: "Republican", I: "Independent", O: "Other" },
@@ -42,10 +43,10 @@ describe("HomePage", () => {
     expect(screen.getByText(/Find your representatives/i)).toBeInTheDocument();
   });
 
-  it("shows empty state when no reps are loaded", async () => {
+  it("renders the ZIP discovery prompt", async () => {
     const element = await HomePage({ searchParams: Promise.resolve({}) });
     render(element);
-    expect(screen.getByText(/No representatives loaded yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/Find your representatives/i)).toBeInTheDocument();
   });
 });
 

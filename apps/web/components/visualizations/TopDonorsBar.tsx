@@ -19,7 +19,7 @@ const SVG_W = LABEL_W + BAR_MAX_W + AMOUNT_W + 8;
 export function TopDonorsBar({ data }: Props) {
   if (!data.length) {
     return (
-      <div className="flex h-[200px] items-center justify-center text-sm text-gray-400">
+      <div style={{ height: 200, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, color: "#444" }}>
         No donor data available
       </div>
     );
@@ -51,7 +51,7 @@ export function TopDonorsBar({ data }: Props) {
               textAnchor="end"
               dominantBaseline="middle"
               fontSize={11}
-              fill="#374151"
+              fill="#888"
             >
               {truncated}
             </text>
@@ -63,7 +63,7 @@ export function TopDonorsBar({ data }: Props) {
               width={BAR_MAX_W}
               height={BAR_HEIGHT - 8}
               rx={3}
-              fill="#e5e7eb"
+              fill="#1c1c1c"
             />
 
             {/* Bar fill */}
@@ -74,7 +74,7 @@ export function TopDonorsBar({ data }: Props) {
                 width={barW}
                 height={BAR_HEIGHT - 8}
                 rx={3}
-                fill="#3b82f6"
+                fill="var(--yellow)"
               />
             )}
 
@@ -84,7 +84,7 @@ export function TopDonorsBar({ data }: Props) {
               y={y + BAR_HEIGHT / 2}
               dominantBaseline="middle"
               fontSize={11}
-              fill="#6b7280"
+              fill="#555"
             >
               {formatDollars(d.total_cents)}
             </text>

@@ -18,6 +18,7 @@ import json
 import logging
 from collections import defaultdict
 from datetime import date
+from typing import NamedTuple
 
 from ulid import ULID
 
@@ -188,17 +189,31 @@ def _load_canonical_reps() -> tuple[dict[str, CanonicalRepRow], dict[str, Canoni
         return by_fec, by_id
 
 
-def _load_linked_filings() -> list[RawFilingRow]:
-    """Return all processed filings that have a canonical_donor_id linked."""
+class _FilingData(NamedTuple):
+    canonical_donor_id: str
+    committee_id: str | None
+    amount_cents: int | None
+    contribution_date: str | None
+    election_cycle: int | None
+
+
+def _load_linked_filings() -> list[_FilingData]:
+    """
+    Return needed columns from processed filings that have a canonical_donor_id.
+    Uses a plain SQL projection so the data survives session close (no detached-instance risk).
+    """
+    from sqlalchemy import text
+
     with get_session() as session:
-        return (
-            session.query(RawFilingRow)
-            .filter(
-                RawFilingRow.is_processed.is_(True),
-                RawFilingRow.canonical_donor_id.isnot(None),
+        rows = session.execute(
+            text(
+                "SELECT canonical_donor_id, committee_id, amount_cents, "
+                "       contribution_date, election_cycle "
+                "FROM raw_filings "
+                "WHERE is_processed = TRUE AND canonical_donor_id IS NOT NULL"
             )
-            .all()
-        )
+        ).fetchall()
+        return [_FilingData(*r) for r in rows]
 
 
 def _load_canonical_donors() -> dict[str, CanonicalDonorRow]:

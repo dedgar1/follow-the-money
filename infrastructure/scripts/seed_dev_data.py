@@ -35,6 +35,7 @@ from adapters.postgres.orm_models import (
     CanonicalDonorRow,
     CanonicalRelationshipRow,
     CanonicalRepRow,
+    RawFilingRow,
     RawVoteRow,
 )
 from infrastructure.database import engine, get_session
@@ -176,6 +177,68 @@ RELATIONSHIPS = [
     ("DONOR012", "REP010", 18_000_00, [2022, 2024], "2022-08-01", "2024-07-01"),
     ("DONOR012", "REP021", 45_000_00, [2022, 2024], "2022-02-01", "2024-10-01"),
     ("DONOR012", "REP025", 15_000_00, [2022, 2024], "2022-05-01", "2024-08-01"),
+]
+
+
+# ── Raw filings (Sprint 11) ───────────────────────────────────────────────────
+# Individual FEC contribution filings linked to canonical donors.
+# Amounts < $200 (< 20000 cents) appear in the Small Donors breakdown.
+# foreign_connected=True filings appear in the Foreign-Connected breakdown.
+#
+# Fields: (source_id, canonical_donor_id, contributor_name, contributor_employer,
+#          contributor_state, amount_cents, contribution_date, election_cycle,
+#          committee_id, foreign_connected)
+
+RAW_FILINGS = [
+    # ── Small donors for REP019 (Eleanor Davenport, D-CA)
+    # linked via DONOR002 (Financial Services Roundtable → REP019)
+    ("FEC-SD-001", "DONOR002", "Margaret R. Sullivan",   "Retired",                      "CA", 15000, "2024-03-12", 2024, "C00100002", False),
+    ("FEC-SD-002", "DONOR002", "Thomas J. Kim",          "Software Engineer",             "CA",  5000, "2024-04-22", 2024, "C00100002", False),
+    ("FEC-SD-003", "DONOR002", "Patricia Nguyen",        "Teacher",                       "CA",  2500, "2024-05-10", 2024, "C00100002", False),
+    ("FEC-SD-004", "DONOR002", "David L. Okafor",        "Nurse",                         "CA",  10000, "2024-06-01", 2024, "C00100002", False),
+    ("FEC-SD-005", "DONOR002", "Angela Martinez",        "Small Business Owner",          "CA",  7500, "2024-07-14", 2024, "C00100002", False),
+    # linked via DONOR003 (TechForward PAC → REP019)
+    ("FEC-SD-006", "DONOR003", "James H. Patel",         "Product Manager",               "CA",  19900, "2024-02-28", 2024, "C00100003", False),
+    ("FEC-SD-007", "DONOR003", "Linda Chen",             "Graphic Designer",              "WA",  5000, "2024-03-30", 2024, "C00100003", False),
+    ("FEC-SD-008", "DONOR003", "Robert Kowalski",        "Data Analyst",                  "OR",  12500, "2024-04-15", 2024, "C00100003", False),
+    ("FEC-SD-009", "DONOR003", "Sarah O'Brien",          "UX Designer",                   "CA",  7500, "2024-05-20", 2024, "C00100003", False),
+    ("FEC-SD-010", "DONOR003", "Kevin Yamamoto",         "Engineer",                      "CA",  15000, "2024-06-18", 2024, "C00100003", False),
+    # linked via DONOR007 (Apex Capital → REP019)
+    ("FEC-SD-011", "DONOR007", "Nancy Goldstein",        "Financial Advisor",             "NY",  19500, "2024-01-15", 2024, "C00100007", False),
+    ("FEC-SD-012", "DONOR007", "Michael Torres",         "Accountant",                    "NY",  8000, "2024-02-10", 2024, "C00100007", False),
+    ("FEC-SD-013", "DONOR007", "Elizabeth Park",         "Attorney",                      "CA",  18000, "2024-03-05", 2024, "C00100007", False),
+
+    # ── Small donors for REP011 (Bradley Harmon, R-TX)
+    # linked via DONOR001 (Energy First PAC → REP011)
+    ("FEC-SD-014", "DONOR001", "Billy Joe Watkins",      "Oil Field Worker",              "TX",  10000, "2024-04-08", 2024, "C00100001", False),
+    ("FEC-SD-015", "DONOR001", "Karen Simmons",          "Rancher",                       "TX",  5000, "2024-05-16", 2024, "C00100001", False),
+    ("FEC-SD-016", "DONOR001", "Dale R. Hutchins",       "Pipeline Technician",           "TX",  19000, "2024-06-22", 2024, "C00100001", False),
+    # linked via DONOR006 (Meridian Petroleum → REP011)
+    ("FEC-SD-017", "DONOR006", "Roy Hendricks",          "Petroleum Engineer",            "TX",  15000, "2024-07-03", 2024, "C00100006", False),
+    ("FEC-SD-018", "DONOR006", "Sandra Beauchamp",       "Landman",                       "TX",  9500, "2024-08-14", 2024, "C00100006", False),
+
+    # ── Small donors for REP023 (Randall Boone, R-TX)
+    # linked via DONOR007 (Apex Capital → REP023)
+    ("FEC-SD-019", "DONOR007", "William Fitzgerald",     "Investment Banker",             "TX",  19900, "2024-01-25", 2024, "C00100007", False),
+    ("FEC-SD-020", "DONOR007", "Catherine Abrams",       "Real Estate Agent",             "TX",  11000, "2024-03-18", 2024, "C00100007", False),
+
+    # ── Foreign-connected filings for REP019 (Eleanor Davenport)
+    # Contributions channeled through foreign-affiliated PACs (FARA-registered)
+    # linked via DONOR002 (Financial Services Roundtable → REP019)
+    ("FEC-FC-001", "DONOR002", "Global Finance Partners LLC", "Intl. Banking Group",      "DC", 500000, "2024-08-01", 2024, "C00100002", True),
+    ("FEC-FC-002", "DONOR002", "Atlantic Bridge Capital",     "Foreign Investment Fund",  "NY", 250000, "2024-09-15", 2024, "C00100002", True),
+    # linked via DONOR011 (TelecomFirst PAC → REP019)
+    ("FEC-FC-003", "DONOR011", "Asia Pacific Telecom PAC",    "Telecom Conglomerate",     "DC", 350000, "2024-07-22", 2024, "C00100011", True),
+
+    # ── Foreign-connected filings for REP023 (Randall Boone)
+    # linked via DONOR001 (Energy First PAC → REP023)
+    ("FEC-FC-004", "DONOR001", "Gulf State Energy Alliance",  "Foreign Energy Corp",      "DC", 400000, "2024-06-10", 2024, "C00100001", True),
+    # linked via DONOR006 (Meridian Petroleum → REP023)
+    ("FEC-FC-005", "DONOR006", "Petro-Arabia Holdings LLC",   "Middle East Oil Interests","DC", 600000, "2024-08-30", 2024, "C00100006", True),
+
+    # ── Foreign-connected filings for REP011 (Bradley Harmon)
+    # linked via DONOR006 (Meridian Petroleum → REP011)
+    ("FEC-FC-006", "DONOR006", "European Energy Consortium",  "EU Energy Affiliate",      "VA", 275000, "2024-07-05", 2024, "C00100006", True),
 ]
 
 
@@ -532,6 +595,14 @@ def _rel_id(donor_id: str, rep_id: str) -> str:
 def _create_tables() -> None:
     log.info("Creating tables if they don't exist…")
     Base.metadata.create_all(engine)
+    # Add columns that may have been introduced after the initial table creation.
+    # `create_all` never alters existing tables, so we handle new columns here.
+    with engine.connect() as conn:
+        conn.execute(text(
+            "ALTER TABLE raw_filings "
+            "ADD COLUMN IF NOT EXISTS foreign_connected BOOLEAN NOT NULL DEFAULT FALSE"
+        ))
+        conn.commit()
 
 
 def _reset(session) -> None:
@@ -563,6 +634,13 @@ def _reset(session) -> None:
         session.execute(
             text("DELETE FROM canonical_donors WHERE id = ANY(:ids)"),
             {"ids": donor_ids},
+        )
+    # Delete seeded raw_filings by source_id prefix
+    filing_source_ids = [f[0] for f in RAW_FILINGS]
+    if filing_source_ids:
+        session.execute(
+            text("DELETE FROM raw_filings WHERE source_id = ANY(:ids)"),
+            {"ids": filing_source_ids},
         )
     # Delete raw_votes by source pattern and bills by id
     session.execute(
@@ -622,6 +700,37 @@ def _seed_postgres(session) -> None:
         ))
         inserted_rels += 1
     log.info(f"  Relationships: {inserted_rels} inserted ({len(RELATIONSHIPS) - inserted_rels} already existed)")
+
+    # Raw filings (Sprint 11 — small donors + foreign-connected)
+    from ulid import ULID
+    inserted_filings = 0
+    for (source_id, canonical_donor_id, contributor_name, contributor_employer,
+         contributor_state, amount_cents, contribution_date, election_cycle,
+         committee_id, foreign_connected) in RAW_FILINGS:
+        existing = session.execute(
+            text("SELECT 1 FROM raw_filings WHERE source_id = :sid"),
+            {"sid": source_id},
+        ).fetchone()
+        if existing:
+            continue
+        session.add(RawFilingRow(
+            id=str(ULID()),
+            source="fec_api",
+            source_id=source_id,
+            committee_id=committee_id,
+            contributor_name=contributor_name,
+            contributor_employer=contributor_employer,
+            contributor_state=contributor_state,
+            amount_cents=amount_cents,
+            contribution_date=contribution_date,
+            election_cycle=election_cycle,
+            payload={},
+            is_processed=True,
+            foreign_connected=foreign_connected,
+            canonical_donor_id=canonical_donor_id,
+        ))
+        inserted_filings += 1
+    log.info(f"  Raw filings: {inserted_filings} inserted ({len(RAW_FILINGS) - inserted_filings} already existed)")
 
     # Bills (Sprint 7)
     inserted_bills = 0
@@ -773,6 +882,7 @@ def main() -> None:
     log.info(f"  {len(REPS)} representatives")
     log.info(f"  {len(DONORS)} donors")
     log.info(f"  {len(RELATIONSHIPS)} funding relationships")
+    log.info(f"  {len(RAW_FILINGS)} raw filings ({sum(1 for f in RAW_FILINGS if not f[9])} small donors, {sum(1 for f in RAW_FILINGS if f[9])} foreign-connected)")
     log.info(f"  {len(BILLS) + len(HISTORICAL_BILLS)} bills ({len(BILLS)} current + {len(HISTORICAL_BILLS)} historical)")
     log.info(f"  {vote_count + hist_vote_count} raw vote records ({vote_count} current + {hist_vote_count} historical)")
     log.info(f"  3 alignment scores (REP011/energy, REP023/finance, REP019/tech)")

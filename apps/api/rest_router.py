@@ -1,10 +1,11 @@
 """
-Public REST API router — fully implemented through Sprint 9.
+Public REST API router — fully implemented through Sprint 11.
 
 Sprint 5: representatives, donors, search.
 Sprint 7: voting record.
 Sprint 8: alignment scores (correlations).
 Sprint 9: compare, CSV export, ZIP lookup, embeddable widget.
+Sprint 11: /stats, /ticker, JSON export, small-donor breakdown.
 """
 
 from __future__ import annotations
@@ -63,8 +64,24 @@ class RepProfile(BaseModel):
     district: Optional[str]
     bioguide_id: Optional[str]
     total_raised_cents: int
+    small_donor_cents: int
+    foreign_connected_cents: int
     top_industries: list[IndustrySummary]
     top_donors: list[TopDonorSummary]
+
+
+class PlatformStats(BaseModel):
+    total_reps: int
+    total_donors: int
+    total_raised_cents: int
+    total_correlations: int
+
+
+class TickerItem(BaseModel):
+    contributor_name: str
+    amount_cents: int
+    committee_id: str
+    contribution_date: Optional[str]
 
 
 class DonorProfile(BaseModel):
@@ -215,6 +232,34 @@ def get_representative(rep_id: str, db: Session = Depends(get_db)):
         {"rep_id": rep_id},
     ).fetchall()
 
+    # Small donors: individual filings < $200 linked to this rep's donors
+    small_donor_cents = int(
+        db.execute(
+            text("""
+                SELECT COALESCE(SUM(rf.amount_cents), 0)
+                FROM raw_filings rf
+                JOIN canonical_donor_rep_relationships dr ON dr.donor_id = rf.canonical_donor_id
+                WHERE dr.rep_id = :rep_id AND rf.amount_cents < 20000
+            """),
+            {"rep_id": rep_id},
+        ).scalar()
+        or 0
+    )
+
+    # Foreign-connected: filings explicitly flagged during ingest
+    foreign_connected_cents = int(
+        db.execute(
+            text("""
+                SELECT COALESCE(SUM(rf.amount_cents), 0)
+                FROM raw_filings rf
+                JOIN canonical_donor_rep_relationships dr ON dr.donor_id = rf.canonical_donor_id
+                WHERE dr.rep_id = :rep_id AND rf.foreign_connected = true
+            """),
+            {"rep_id": rep_id},
+        ).scalar()
+        or 0
+    )
+
     return RepProfile(
         id=rep.id,
         full_name=rep.full_name,
@@ -224,6 +269,8 @@ def get_representative(rep_id: str, db: Session = Depends(get_db)):
         district=rep.district,
         bioguide_id=rep.bioguide_id,
         total_raised_cents=total_raised_cents,
+        small_donor_cents=small_donor_cents,
+        foreign_connected_cents=foreign_connected_cents,
         top_industries=[
             IndustrySummary(industry=row[0], total_cents=int(row[1]))
             for row in industry_rows
@@ -851,6 +898,177 @@ def export_csv(rep_id: str, db: Session = Depends(get_db)):
         media_type="text/csv",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+# ── Platform stats ─────────────────────────────────────────────────────────────
+
+
+@router.get("/stats", response_model=PlatformStats, summary="Platform-wide aggregate stats")
+def get_stats(db: Session = Depends(get_db)):
+    """Live counts of representatives, donors, total raised, and correlations."""
+    from adapters.postgres.orm_models import AlignmentScoreRow
+
+    total_reps = int(db.execute(text("SELECT COUNT(*) FROM canonical_reps")).scalar() or 0)
+    total_donors = int(db.execute(text("SELECT COUNT(*) FROM canonical_donors")).scalar() or 0)
+    total_raised_cents = int(
+        db.execute(text("SELECT COALESCE(SUM(total_amount_cents), 0) FROM canonical_donor_rep_relationships")).scalar() or 0
+    )
+    total_correlations = int(db.execute(text("SELECT COUNT(*) FROM alignment_scores")).scalar() or 0)
+
+    return PlatformStats(
+        total_reps=total_reps,
+        total_donors=total_donors,
+        total_raised_cents=total_raised_cents,
+        total_correlations=total_correlations,
+    )
+
+
+# ── Activity ticker ─────────────────────────────────────────────────────────────
+
+
+@router.get("/ticker", response_model=list[TickerItem], summary="Recent FEC filing activity")
+def get_ticker(limit: int = 20, db: Session = Depends(get_db)):
+    """Latest individual FEC contribution filings, ordered by ingestion time."""
+    limit = min(limit, 100)
+    rows = db.execute(
+        text("""
+            SELECT contributor_name, amount_cents, committee_id, contribution_date
+            FROM raw_filings
+            WHERE contributor_name IS NOT NULL AND amount_cents > 0
+            ORDER BY fetched_at DESC, contribution_date DESC
+            LIMIT :limit
+        """),
+        {"limit": limit},
+    ).fetchall()
+
+    return [
+        TickerItem(
+            contributor_name=str(row[0]),
+            amount_cents=int(row[1]),
+            committee_id=str(row[2] or ""),
+            contribution_date=str(row[3])[:10] if row[3] else None,
+        )
+        for row in rows
+    ]
+
+
+# ── JSON Export ─────────────────────────────────────────────────────────────────
+
+
+@router.get("/export/{rep_id}.json", summary="Export representative data as JSON")
+def export_json(rep_id: str, db: Session = Depends(get_db)):
+    """
+    Download a representative's funding, alignment scores, and voting record as JSON.
+
+    Same data as the CSV export, structured as a JSON object with sections
+    ``representative``, ``donors``, ``alignment_scores``, and ``votes``.
+    """
+    from adapters.postgres.orm_models import AlignmentScoreRow
+
+    rep = db.get(CanonicalRepRow, rep_id)
+    if rep is None:
+        raise HTTPException(status_code=404, detail="Representative not found")
+
+    donor_rows = db.execute(
+        text("""
+            SELECT r.donor_id, cd.name, cd.donor_type, cd.industry,
+                   SUM(r.total_amount_cents) AS total_cents
+            FROM canonical_donor_rep_relationships r
+            JOIN canonical_donors cd ON cd.id = r.donor_id
+            WHERE r.rep_id = :rid
+            GROUP BY r.donor_id, cd.name, cd.donor_type, cd.industry
+            ORDER BY total_cents DESC
+            LIMIT 50
+        """),
+        {"rid": rep_id},
+    ).fetchall()
+
+    score_rows = (
+        db.query(AlignmentScoreRow)
+        .filter_by(rep_id=rep_id)
+        .order_by(AlignmentScoreRow.shift.desc())
+        .all()
+    )
+
+    vote_rows = []
+    if rep.bioguide_id:
+        vote_rows = db.execute(
+            text("""
+                SELECT rv.bill_id, rv.bill_title, rv.position,
+                       rv.voted_at, rv.chamber, b.industries
+                FROM raw_votes rv
+                LEFT JOIN bills b ON b.congress_gov_id = rv.bill_id
+                WHERE rv.member_bioguide_id = :bioguide_id
+                ORDER BY rv.voted_at DESC
+                LIMIT 200
+            """),
+            {"bioguide_id": rep.bioguide_id},
+        ).fetchall()
+
+    payload = {
+        "meta": {
+            "source": "FEC filings + Congress.gov",
+            "disclaimer": "Correlation ≠ causation. See /docs/methodology.",
+        },
+        "representative": {
+            "id": rep.id,
+            "full_name": rep.full_name,
+            "party": rep.party,
+            "chamber": rep.chamber,
+            "state": rep.state,
+            "district": rep.district,
+            "bioguide_id": rep.bioguide_id,
+        },
+        "donors": [
+            {
+                "donor_id": row[0],
+                "donor_name": row[1],
+                "donor_type": row[2],
+                "industry": row[3],
+                "total_cents": int(row[4]),
+            }
+            for row in donor_rows
+        ],
+        "alignment_scores": [
+            {
+                "industry": s.industry,
+                "score": s.score,
+                "confidence": s.confidence,
+                "evidence_count": s.evidence_count,
+                "before_score": s.before_score,
+                "after_score": s.after_score,
+                "shift": s.shift,
+                "p_value": s.p_value,
+            }
+            for s in score_rows
+        ],
+        "votes": [
+            {
+                "bill_id": str(row[0] or ""),
+                "bill_title": str(row[1] or ""),
+                "position": _POSITION_NORM.get(str(row[2]), str(row[2]).lower()),
+                "voted_at": str(row[3])[:10] if row[3] else "",
+                "chamber": str(row[4] or "").lower(),
+                "industries": _safe_json(row[5]),
+            }
+            for row in vote_rows
+        ],
+    }
+
+    safe_name = "".join(c if c.isalnum() or c in ("_", "-") else "_" for c in rep.full_name)
+    filename = f"{safe_name}_{rep.id}.json"
+    return StreamingResponse(
+        iter([json.dumps(payload, indent=2)]),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+def _safe_json(value) -> list:
+    try:
+        return json.loads(value or "[]")
+    except (json.JSONDecodeError, TypeError):
+        return []
 
 
 # ── Embeddable widget ──────────────────────────────────────────────────────────

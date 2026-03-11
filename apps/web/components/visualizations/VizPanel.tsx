@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { IndustrySummary, TopDonorSummary, AlignmentScore } from "@/lib/api/client";
-import { formatDollars } from "@/lib/api/client";
+import { formatDollars, exportJsonUrl } from "@/lib/api/client";
 import { DonutChart } from "./DonutChart";
 import { TopDonorsBar } from "./TopDonorsBar";
 import { Treemap } from "./Treemap";
@@ -16,6 +16,8 @@ interface Props {
   repId: string;
   repName: string;
   totalRaisedCents: number;
+  smallDonorCents: number;
+  foreignConnectedCents: number;
   industries: IndustrySummary[];
   donors: TopDonorSummary[];
   network: { nodes: NetworkNode[]; edges: NetworkEdge[] };
@@ -26,6 +28,8 @@ export function VizPanel({
   repId,
   repName,
   totalRaisedCents,
+  smallDonorCents,
+  foreignConnectedCents,
   industries,
   donors,
   network,
@@ -103,8 +107,7 @@ export function VizPanel({
       {/* Sidebar */}
       <aside style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-        {/* Funding Breakdown — placeholder */}
-        {/* TODO Sprint 10: wire Small Donors (<$200) and Foreign-Connected data */}
+        {/* Funding Breakdown */}
         <div
           style={{
             background: "#111",
@@ -124,21 +127,17 @@ export function VizPanel({
           >
             Funding Breakdown
           </p>
-          <FundingBreakdownRow label="Small Donors <$200" value="—" note="placeholder" />
+          <FundingBreakdownRow
+            label="Small Donors <$200"
+            value={smallDonorCents > 0 ? formatDollars(smallDonorCents) : "—"}
+            note={smallDonorCents === 0 ? "no data" : undefined}
+          />
           <FundingBreakdownRow label="PAC Contributions" value={formatDollars(totalRaisedCents)} />
-          <FundingBreakdownRow label="Foreign-Connected" value="—" note="placeholder" />
-          <div
-            style={{
-              marginTop: 10,
-              padding: "6px 8px",
-              background: "#0d0d0d",
-              borderRadius: 4,
-              fontSize: 10,
-              color: "#333",
-            }}
-          >
-            Full breakdown — Sprint 10
-          </div>
+          <FundingBreakdownRow
+            label="Foreign-Connected"
+            value={foreignConnectedCents > 0 ? formatDollars(foreignConnectedCents) : "—"}
+            note={foreignConnectedCents === 0 ? "no data" : undefined}
+          />
         </div>
 
         {/* Top Donors */}
@@ -217,19 +216,11 @@ export function VizPanel({
               label="Export CSV"
               download
             />
-            {/* TODO Sprint 10: Export JSON endpoint */}
-            <div
-              style={{
-                padding: "7px 12px",
-                background: "#0d0d0d",
-                borderRadius: 4,
-                fontSize: 11,
-                color: "#333",
-                cursor: "not-allowed",
-              }}
-            >
-              Export JSON — Sprint 10
-            </div>
+            <SidebarActionLink
+              href={exportJsonUrl(repId)}
+              label="Export JSON"
+              download
+            />
           </div>
         </div>
 

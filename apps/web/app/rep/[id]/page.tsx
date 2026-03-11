@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { api, formatDollars, CHAMBER_LABEL } from "@/lib/api/client";
-import type { VoteRecord } from "@/lib/api/client";
+import type { AlignmentScore, VoteRecord } from "@/lib/api/client";
 import { PartyBadge } from "@/components/shared/PartyBadge";
 import { DonutChart } from "@/components/visualizations/DonutChart";
 import { TopDonorsBar } from "@/components/visualizations/TopDonorsBar";
 import { NetworkGraph } from "@/components/visualizations/NetworkGraph";
+import { AlignmentHeatmap } from "@/components/correlation/AlignmentHeatmap";
+import { CorrelationTimeline } from "@/components/correlation/CorrelationTimeline";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -35,12 +37,14 @@ export default async function RepProfilePage({ params }: Props) {
   let rep: Awaited<ReturnType<typeof api.getRepresentative>> | null;
   let network: Awaited<ReturnType<typeof api.getRepNetwork>>;
   let votes: VoteRecord[];
+  let correlations: AlignmentScore[];
 
   try {
-    [rep, network, votes] = await Promise.all([
+    [rep, network, votes, correlations] = await Promise.all([
       api.getRepresentative(id),
       api.getRepNetwork(id).catch(() => ({ nodes: [], edges: [] })),
       api.getRepVotes(id).catch(() => []),
+      api.getRepCorrelations(id).catch(() => []),
     ]);
   } catch (err: unknown) {
     const status = (err as { status?: number })?.status;
@@ -48,6 +52,7 @@ export default async function RepProfilePage({ params }: Props) {
     rep = null;
     network = { nodes: [], edges: [] };
     votes = [];
+    correlations = [];
   }
 
   if (!rep) {
@@ -195,11 +200,40 @@ export default async function RepProfilePage({ params }: Props) {
           )}
         </section>
 
-        {/* Coming soon placeholders */}
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
-            Donor alignment correlations — Sprint 8
+        {/* Donor-industry alignment correlations */}
+        <section className="mt-6 rounded-lg border border-gray-200 bg-white shadow-sm">
+          <div className="border-b border-gray-100 px-6 py-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-500">
+              Donor-Industry Alignment ({correlations.length})
+            </h2>
+            <p className="mt-0.5 text-xs text-gray-400">
+              Voting alignment before and after significant donations. Correlation ≠ causation.{" "}
+              <Link href="/docs/methodology" className="underline hover:text-gray-600">
+                Methodology
+              </Link>
+            </p>
           </div>
+
+          <div className="p-6">
+            <AlignmentHeatmap scores={correlations} />
+          </div>
+
+          {correlations.length > 0 && (
+            <div className="border-t border-gray-100 px-6 pb-6">
+              <p className="mb-4 mt-4 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                Before / After Detail
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {correlations.slice(0, 6).map((s) => (
+                  <CorrelationTimeline key={s.id} score={s} />
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Coming soon placeholder */}
+        <div className="mt-6">
           <div className="rounded-lg border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
             Side-by-side comparison — Sprint 9
           </div>

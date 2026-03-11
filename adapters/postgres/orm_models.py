@@ -366,3 +366,77 @@ class LisBioguideMapRow(Base):
     __table_args__ = (
         Index("ix_lis_bioguide_map_bioguide_id", "bioguide_id"),
     )
+
+
+# ── Correlation tables (Sprint 8) ─────────────────────────────────────────────
+
+
+class AlignmentScoreRow(Base):
+    """
+    Computed alignment score for one (canonical_rep, industry) pair.
+
+    Persisted by pipeline.tasks.compute_correlations after running the
+    CorrelationEngine.  Each row represents the before/after voting shift
+    around the major donation event from that industry.
+    """
+
+    __tablename__ = "alignment_scores"
+
+    id:               Mapped[str] = mapped_column(String(26), primary_key=True)
+    rep_id:           Mapped[str] = mapped_column(
+        String(26), ForeignKey("canonical_reps.id"), nullable=False
+    )
+    donor_id:         Mapped[str] = mapped_column(
+        String(26), ForeignKey("canonical_donors.id"), nullable=False
+    )
+    industry:         Mapped[str] = mapped_column(String(100), nullable=False)
+    score:            Mapped[float] = mapped_column(Float, nullable=False)
+    confidence:       Mapped[str] = mapped_column(String(10), nullable=False)    # low/medium/high
+    evidence_count:   Mapped[int] = mapped_column(Integer, nullable=False)
+    before_score:     Mapped[float] = mapped_column(Float, nullable=False)
+    after_score:      Mapped[float] = mapped_column(Float, nullable=False)
+    shift:            Mapped[float] = mapped_column(Float, nullable=False)
+    p_value:          Mapped[float] = mapped_column(Float, nullable=False)
+    methodology_url:  Mapped[str] = mapped_column(String(500), nullable=False)
+    computed_at:      Mapped[str | None] = mapped_column(String(10), nullable=True)   # ISO date
+    created_at:       Mapped[datetime] = mapped_column(DateTime, default=_now)
+    updated_at:       Mapped[datetime] = mapped_column(DateTime, default=_now, onupdate=_now)
+
+    __table_args__ = (
+        Index("ix_alignment_scores_rep_id", "rep_id"),
+        Index("ix_alignment_scores_industry", "industry"),
+        Index(
+            "uq_alignment_scores_rep_industry",
+            "rep_id",
+            "industry",
+            unique=True,
+        ),
+    )
+
+
+class CorrelationEventRow(Base):
+    """
+    A significant donation event that triggered a before/after analysis window.
+
+    One row per (rep, donor, industry) event that crossed the major-donation
+    threshold.  Written alongside AlignmentScoreRow.
+    """
+
+    __tablename__ = "correlation_events"
+
+    id:                    Mapped[str] = mapped_column(String(26), primary_key=True)
+    rep_id:                Mapped[str] = mapped_column(
+        String(26), ForeignKey("canonical_reps.id"), nullable=False
+    )
+    donor_id:              Mapped[str] = mapped_column(
+        String(26), ForeignKey("canonical_donors.id"), nullable=False
+    )
+    industry:              Mapped[str] = mapped_column(String(100), nullable=False)
+    event_date:            Mapped[str] = mapped_column(String(10), nullable=False)     # ISO date
+    threshold_amount_cents: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at:            Mapped[datetime] = mapped_column(DateTime, default=_now)
+
+    __table_args__ = (
+        Index("ix_correlation_events_rep_id", "rep_id"),
+        Index("ix_correlation_events_donor_id", "donor_id"),
+    )

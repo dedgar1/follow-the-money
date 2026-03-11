@@ -2,7 +2,9 @@
 Integration tests for REST endpoints and GraphQL.
 
 Sprint 5: representatives, donors, and search endpoints are now implemented.
-Remaining stubs (votes, correlations, zip, compare, export) still return 501.
+Sprint 7: /votes endpoint implemented — returns 404 for unknown rep.
+Sprint 8: /correlations endpoint implemented — returns 404 for unknown rep.
+Remaining stubs (zip, compare, export) still return 501.
 """
 
 from __future__ import annotations
@@ -48,8 +50,8 @@ client = TestClient(app)
 
 
 @pytest.mark.parametrize("path", [
-    # /votes is implemented in Sprint 7 — returns 404 for unknown rep, not 501
-    "/v1/representatives/rep1/correlations",
+    # /votes (Sprint 7) and /correlations (Sprint 8) are implemented —
+    # they return 404 for unknown rep, not 501
     "/v1/zip/90210",
     "/v1/compare?ids=rep1,rep2",
     "/v1/export/rep1.csv",
@@ -63,6 +65,12 @@ def test_unimplemented_rest_endpoints_return_501(path: str):
 def test_votes_returns_404_for_unknown_rep():
     """Sprint 7: /votes endpoint is implemented — returns 404 (not 501) for unknown rep."""
     response = client.get("/v1/representatives/rep1/votes")
+    assert response.status_code == 404
+
+
+def test_correlations_returns_404_for_unknown_rep():
+    """Sprint 8: /correlations endpoint is implemented — returns 404 for unknown rep."""
+    response = client.get("/v1/representatives/rep1/correlations")
     assert response.status_code == 404
 
 

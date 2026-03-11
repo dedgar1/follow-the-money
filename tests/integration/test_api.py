@@ -4,7 +4,7 @@ Integration tests for REST endpoints and GraphQL.
 Sprint 5: representatives, donors, and search endpoints are now implemented.
 Sprint 7: /votes endpoint implemented — returns 404 for unknown rep.
 Sprint 8: /correlations endpoint implemented — returns 404 for unknown rep.
-Remaining stubs (zip, compare, export) still return 501.
+Sprint 9: /zip, /compare, /export, /widget all implemented.
 """
 
 from __future__ import annotations
@@ -46,20 +46,42 @@ app.dependency_overrides[get_db] = lambda: _mock_db
 client = TestClient(app)
 
 
-# ── REST — still-unimplemented endpoints (future sprints) ─────────────────────
+# ── REST — Sprint 9 endpoints (previously 501 stubs) ─────────────────────────
 
 
-@pytest.mark.parametrize("path", [
-    # /votes (Sprint 7) and /correlations (Sprint 8) are implemented —
-    # they return 404 for unknown rep, not 501
-    "/v1/zip/90210",
-    "/v1/compare?ids=rep1,rep2",
-    "/v1/export/rep1.csv",
-])
-def test_unimplemented_rest_endpoints_return_501(path: str):
-    response = client.get(path)
-    assert response.status_code == 501
-    assert "detail" in response.json()
+def test_zip_returns_200_with_list():
+    """Sprint 9: /zip is implemented — returns 200 (empty list when mock DB has no rows)."""
+    response = client.get("/v1/zip/90210")
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_zip_returns_422_for_non_numeric():
+    response = client.get("/v1/zip/ABCDE")
+    assert response.status_code == 422
+
+
+def test_compare_returns_404_for_unknown_reps():
+    """Sprint 9: /compare is implemented — 404 when rep IDs not found."""
+    response = client.get("/v1/compare?ids=rep1,rep2")
+    assert response.status_code == 404
+
+
+def test_compare_returns_422_for_single_id():
+    response = client.get("/v1/compare?ids=rep1")
+    assert response.status_code == 422
+
+
+def test_export_returns_404_for_unknown_rep():
+    """Sprint 9: /export is implemented — 404 when rep not found."""
+    response = client.get("/v1/export/rep1.csv")
+    assert response.status_code == 404
+
+
+def test_widget_returns_404_for_unknown_rep():
+    """Sprint 9: /widget is implemented — 404 when rep not found."""
+    response = client.get("/v1/widget/rep1")
+    assert response.status_code == 404
 
 
 def test_votes_returns_404_for_unknown_rep():

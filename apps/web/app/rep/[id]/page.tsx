@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { api, formatDollars, CHAMBER_LABEL } from "@/lib/api/client";
+import { api, formatDollars, CHAMBER_LABEL, exportCsvUrl } from "@/lib/api/client";
 import type { AlignmentScore, VoteRecord } from "@/lib/api/client";
 import { PartyBadge } from "@/components/shared/PartyBadge";
 import { DonutChart } from "@/components/visualizations/DonutChart";
@@ -95,11 +95,24 @@ export default async function RepProfilePage({ params }: Props) {
                 )}
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <PartyBadge party={rep.party} />
               <span className="text-sm font-semibold text-gray-700">
                 Total raised: {formatDollars(rep.total_raised_cents)}
               </span>
+              <Link
+                href={`/compare?ids=${rep.id}`}
+                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Compare
+              </Link>
+              <a
+                href={exportCsvUrl(rep.id)}
+                download
+                className="rounded-md border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50"
+              >
+                Export CSV
+              </a>
             </div>
           </div>
         </div>
@@ -231,13 +244,6 @@ export default async function RepProfilePage({ params }: Props) {
             </div>
           )}
         </section>
-
-        {/* Coming soon placeholder */}
-        <div className="mt-6">
-          <div className="rounded-lg border border-dashed border-gray-200 p-6 text-center text-sm text-gray-400">
-            Side-by-side comparison — Sprint 9
-          </div>
-        </div>
 
         {/* Disclaimer */}
         <p className="mt-6 text-xs text-gray-400">

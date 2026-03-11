@@ -79,3 +79,60 @@ body {
   border-color: var(--white) !important;
   color: var(--white) !important;
 }
+
+/* ── Mobile / tablet responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Hero: stack columns */
+  section[style*="gridTemplateColumns: 1fr 1fr"] {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 32px 20px 24px !important;
+    gap: 32px !important;
+  }
+
+  /* Stats row: 2-column on mobile */
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* VizPanel: stack main + sidebar */
+  div[style*="gridTemplateColumns: 1fr 280px"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 24px !important;
+  }
+
+  /* Rep profile header: reduce font sizes */
+  h1[style*="fontSize: 28"] { font-size: 22px !important; }
+
+  /* Results grid: 1 column */
+  div[style*="gridTemplateColumns: repeat(3, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+  div[style*="gridTemplateColumns: repeat(2, 1fr)"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Nav center search: hide on mobile (use ZIP form on homepage) */
+  nav form { display: none !important; }
+
+  /* Comparison side-by-side: stack */
+  div[style*="gridTemplateColumns: 1fr 1fr"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 20px !important;
+  }
+
+  /* Table overflow */
+  table { display: block; overflow-x: auto; }
+}
+
+@media (max-width: 480px) {
+  /* Stats row: single column on very small screens */
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Hero headline */
+  h1[style*="fontSize: 48"] { font-size: 32px !important; }
+}

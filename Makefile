@@ -114,36 +114,30 @@ pipeline: task-ingest-fec task-ingest-votes task-resolve-identities task-classif
 
 ## Stage 1 — Fetch FEC contribution filings into raw tables.
 task-ingest-fec:
-	@echo "Running ingest_fec…"
 	@$(CELERY_CALL) pipeline.tasks.ingest_fec.run
-	@echo "ingest_fec done."
+	@echo "ingest_fec queued — check http://localhost:5555 for progress."
 
 ## Stage 2 — Fetch roll call votes from Congress.gov + Senate XML.
 task-ingest-votes:
-	@echo "Running ingest_votes…"
 	@$(CELERY_CALL) pipeline.tasks.ingest_votes.run
-	@echo "ingest_votes done."
+	@echo "ingest_votes queued — check http://localhost:5555 for progress."
 
 ## Stage 3 — Resolve raw donors/reps into canonical entities.
 task-resolve-identities:
-	@echo "Running resolve_identities…"
 	@$(CELERY_CALL) pipeline.tasks.resolve_identities.run
-	@echo "resolve_identities done."
+	@echo "resolve_identities queued — check http://localhost:5555 for progress."
 
 ## Stage 4 — NLP-classify bills into industry categories.
 task-classify-bills:
-	@echo "Running classify_bills…"
 	@$(CELERY_CALL) pipeline.tasks.classify_bills.run
-	@echo "classify_bills done."
+	@echo "classify_bills queued — check http://localhost:5555 for progress."
 
 ## Stage 5 — Aggregate finance data into rollups + Neo4j graph.
 task-aggregate-finance:
-	@echo "Running aggregate_finance…"
 	@$(CELERY_CALL) pipeline.tasks.aggregate_finance.run
-	@echo "aggregate_finance done."
+	@echo "aggregate_finance queued — check http://localhost:5555 for progress."
 
 ## Stage 6 — Compute donor-vote alignment scores (CorrelationEngine).
 task-compute-correlations:
-	@echo "Running compute_correlations…"
 	@$(CELERY_CALL) pipeline.tasks.compute_correlations.run
-	@echo "compute_correlations done."
+	@echo "compute_correlations queued — check http://localhost:5555 for progress."

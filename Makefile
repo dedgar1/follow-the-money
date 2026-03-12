@@ -110,7 +110,7 @@ CELERY_CALL = $(COMPOSE) exec -T api celery --app=pipeline.celery_app.celery_app
 
 ## Run all pipeline stages in sequence (blocking).
 pipeline: task-ingest-fec task-ingest-votes task-resolve-identities task-classify-bills task-aggregate-finance task-compute-correlations
-	@echo "Pipeline complete."
+	@echo "Pipeline Triggered."
 
 ## Stage 1 — Fetch FEC contribution filings into raw tables.
 task-ingest-fec:

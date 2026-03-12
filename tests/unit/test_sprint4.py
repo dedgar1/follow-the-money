@@ -502,12 +502,13 @@ class TestResolveIdentitiesLinking:
         return row
 
     def test_links_canonical_donor_id_to_filing(self):
-        from pipeline.tasks.resolve_identities import _resolve_donors
+        from pipeline.tasks.resolve_identities import _FilingData, _resolve_donors
 
-        filing = self._make_filing("f1", "Alice Smith")
+        filing_data = _FilingData(id="f1", contributor_name="Alice Smith", committee_id="C00001")
+
         mock_session = MagicMock()
-        mock_session.query.return_value.filter_by.return_value.all.return_value = [filing]
-        mock_session.get.return_value = filing
+        mock_db_row = MagicMock()
+        mock_session.get.return_value = mock_db_row
 
         mock_ctx = MagicMock()
         mock_ctx.__enter__ = MagicMock(return_value=mock_session)
@@ -520,6 +521,7 @@ class TestResolveIdentitiesLinking:
         mock_resolver.resolve_donor.return_value = mock_donor
 
         with (
+            patch("pipeline.tasks.resolve_identities._load_unprocessed_filings", return_value=[filing_data]),
             patch("pipeline.tasks.resolve_identities.get_session", return_value=mock_ctx),
             patch("pipeline.tasks.resolve_identities.PostgresIdentityRepository"),
             patch("pipeline.tasks.resolve_identities.EntityResolver",
@@ -529,19 +531,18 @@ class TestResolveIdentitiesLinking:
 
         assert donors_created == 1
         assert filings_marked == 1
-        # Verify the filing row had canonical_donor_id set
-        assert filing.canonical_donor_id == "donor_123"
-        assert filing.is_processed is True
+        assert mock_db_row.canonical_donor_id == "donor_123"
+        assert mock_db_row.is_processed is True
 
     def test_groups_similar_names_to_same_donor(self):
-        from pipeline.tasks.resolve_identities import _resolve_donors
+        from pipeline.tasks.resolve_identities import _FilingData, _resolve_donors
 
-        filing1 = self._make_filing("f1", "GOOGLE INC")
-        filing2 = self._make_filing("f2", "GOOGLE LLC")
+        filing1 = _FilingData(id="f1", contributor_name="GOOGLE INC", committee_id="C00001")
+        filing2 = _FilingData(id="f2", contributor_name="GOOGLE LLC", committee_id="C00001")
+
+        mock_row1, mock_row2 = MagicMock(), MagicMock()
         mock_session = MagicMock()
-        mock_session.query.return_value.filter_by.return_value.all.return_value = [filing1, filing2]
-        filing_map = {"f1": filing1, "f2": filing2}
-        mock_session.get.side_effect = lambda *args: filing_map[args[1]]
+        mock_session.get.side_effect = lambda cls, fid: {"f1": mock_row1, "f2": mock_row2}[fid]
 
         mock_ctx = MagicMock()
         mock_ctx.__enter__ = MagicMock(return_value=mock_session)
@@ -554,6 +555,7 @@ class TestResolveIdentitiesLinking:
         mock_resolver.resolve_donor.return_value = mock_donor
 
         with (
+            patch("pipeline.tasks.resolve_identities._load_unprocessed_filings", return_value=[filing1, filing2]),
             patch("pipeline.tasks.resolve_identities.get_session", return_value=mock_ctx),
             patch("pipeline.tasks.resolve_identities.PostgresIdentityRepository"),
             patch("pipeline.tasks.resolve_identities.EntityResolver",
@@ -564,8 +566,8 @@ class TestResolveIdentitiesLinking:
         # Two similar names should cluster to 1 donor
         assert donors_created == 1
         assert filings_marked == 2
-        assert filing1.canonical_donor_id == "donor_google"
-        assert filing2.canonical_donor_id == "donor_google"
+        assert mock_row1.canonical_donor_id == "donor_google"
+        assert mock_row2.canonical_donor_id == "donor_google"
 
 
 # ── ORM model Sprint 4 fields ─────────────────────────────────────────────────

@@ -236,24 +236,35 @@ def _map_senate_member(
 
 def _normalize_senate_date(raw_date: str, congress: int) -> str:
     """
-    Senate XML dates are 'DD-Mon' (e.g. '18-Dec') without a year.
-    Derive the year from the congress number (119th → 2025 or 2026).
-    Returns 'YYYY-MM-DD' or the raw string if parsing fails.
+    Normalize Senate XML vote dates to 'YYYY-MM-DD'.
+
+    The Senate.gov XML uses several formats depending on the feed:
+      - "December 6, 2024"  (vote detail XML — most common)
+      - "12/06/2024"        (some list feeds)
+      - "18-Dec"            (legacy, year-less — derived from congress number)
+    Always returns a string safe for the voted_at VARCHAR(10) column.
     """
     import datetime
 
-    if not raw_date or len(raw_date) < 6:
-        return raw_date
+    if not raw_date:
+        return ""
 
-    # 119th Congress: Jan 2025 – Jan 2027. Use start year as base.
-    start_year = 1787 + (congress * 2)  # 119 → 2025
+    # Try formats that include a full year first
+    for fmt in ("%B %d, %Y", "%b %d, %Y", "%m/%d/%Y", "%Y-%m-%d", "%d-%b-%Y"):
+        try:
+            return datetime.datetime.strptime(raw_date, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            continue
 
+    # Legacy "DD-Mon" without year — derive from congress number
+    start_year = 1787 + (congress * 2)  # 119th → 2025
     try:
-        # Try to parse 'DD-Mon'; assume start_year first, then +1 if month < Jan
-        dt = datetime.datetime.strptime(f"{raw_date}-{start_year}", "%d-%b-%Y")
-        return dt.strftime("%Y-%m-%d")
+        return datetime.datetime.strptime(f"{raw_date}-{start_year}", "%d-%b-%Y").strftime("%Y-%m-%d")
     except ValueError:
-        return raw_date
+        pass
+
+    # Last resort: truncate to 10 chars so the column never overflows
+    return raw_date[:10]
 
 
 # ── Shared helpers ────────────────────────────────────────────────────────────

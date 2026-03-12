@@ -167,7 +167,7 @@ def _map_to_domain(record: dict) -> RawFiling:
     return RawFiling(
         id=str(ULID()),
         source="fec_api",
-        source_id=record.get("transaction_id", ""),
+        source_id=record.get("transaction_id") or record.get("sub_id") or "",
         committee_id=record.get("committee_id", ""),
         contributor_name=record.get("contributor_name", "") or "",
         contributor_employer=record.get("contributor_employer", "") or "",

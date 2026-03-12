@@ -59,6 +59,24 @@ class TestFECApiClientMapping:
         assert filing.contributor_name == ""
         assert filing.contributor_employer == ""
 
+    def test_map_to_domain_null_transaction_id_falls_back_to_sub_id(self):
+        from pipeline.tasks.ingest_fec import _map_to_domain
+
+        record = {
+            "transaction_id": None,  # FEC API sometimes returns null
+            "sub_id": "4050120231746003043",
+            "contribution_receipt_amount": 100.0,
+        }
+        filing = _map_to_domain(record)
+        assert filing.source_id == "4050120231746003043"
+
+    def test_map_to_domain_null_transaction_id_no_sub_id(self):
+        from pipeline.tasks.ingest_fec import _map_to_domain
+
+        record = {"transaction_id": None, "contribution_receipt_amount": 50.0}
+        filing = _map_to_domain(record)
+        assert filing.source_id == ""
+
     def test_map_to_domain_fractional_cents(self):
         from pipeline.tasks.ingest_fec import _map_to_domain
 

@@ -13,6 +13,7 @@ Failure mode: FAIL LOUD — same retry/alert pattern as ingest tasks.
 from __future__ import annotations
 
 import logging
+from typing import NamedTuple
 
 from adapters.external.congress_client import CongressApiError, CongressGovClient
 from adapters.nlp.entity_resolver import DonorNameResolver
@@ -151,6 +152,24 @@ def _build_lis_map(congress: int) -> None:
 # ── Step 3: Resolve donors ────────────────────────────────────────────────────
 
 
+class _FilingData(NamedTuple):
+    id: str
+    contributor_name: str
+    committee_id: str | None
+
+
+def _load_unprocessed_filings() -> list[_FilingData]:
+    from sqlalchemy import text
+    with get_session() as session:
+        rows = session.execute(
+            text(
+                "SELECT id, contributor_name, committee_id "
+                "FROM raw_filings WHERE is_processed = FALSE"
+            )
+        ).fetchall()
+        return [_FilingData(*r) for r in rows]
+
+
 def _resolve_donors() -> tuple[int, int]:
     """
     Read all unprocessed raw_filings, cluster donor names with rapidfuzz,
@@ -158,12 +177,7 @@ def _resolve_donors() -> tuple[int, int]:
 
     Returns (donors_resolved, filings_marked).
     """
-    with get_session() as session:
-        unprocessed: list[RawFilingRow] = (
-            session.query(RawFilingRow)
-            .filter_by(is_processed=False)
-            .all()
-        )
+    unprocessed = _load_unprocessed_filings()
 
     if not unprocessed:
         logger.info("resolve_identities: no unprocessed filings")
@@ -175,7 +189,7 @@ def _resolve_donors() -> tuple[int, int]:
     name_resolver = DonorNameResolver()
     filing_cluster_map: dict[str, object] = {}  # filing.id → DonorCluster
     for filing in unprocessed:
-        cluster = name_resolver.add(filing.contributor_name, fec_id=filing.committee_id)
+        cluster = name_resolver.add(filing.contributor_name or "", fec_id=filing.committee_id)
         filing_cluster_map[filing.id] = cluster
 
     clusters = name_resolver.clusters

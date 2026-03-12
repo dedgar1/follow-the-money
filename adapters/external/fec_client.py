@@ -28,7 +28,7 @@ class FECApiClient:
         self._api_key = api_key or settings.fec_api_key or "DEMO_KEY"
         self._client = httpx.Client(
             base_url=self.BASE_URL,
-            timeout=30.0,
+            timeout=httpx.Timeout(connect=10.0, read=120.0, write=10.0, pool=10.0),
             headers={"User-Agent": "FollowTheMoney/1.0"},
         )
 
@@ -77,7 +77,15 @@ class FECApiClient:
             if last_indexes:
                 params.update(last_indexes)
 
-            response = self._client.get("/schedules/schedule_a/", params=params)
+            for attempt in range(3):
+                try:
+                    response = self._client.get("/schedules/schedule_a/", params=params)
+                    break
+                except httpx.ReadTimeout:
+                    if attempt == 2:
+                        raise FECApiError("FEC API timed out after 3 attempts") from None
+                    import time
+                    time.sleep(5 * (attempt + 1))
             _raise_for_status(response)
             body = response.json()
 

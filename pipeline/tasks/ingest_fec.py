@@ -49,8 +49,10 @@ def run(self) -> dict:
         rows_written = _fetch_and_store(cycle)
     except FECApiError as exc:
         logger.error("ingest_fec: FEC API error on attempt %d: %s", self.request.retries + 1, exc)
+        # Rate limit needs a full hour to reset; other errors use exponential backoff
+        countdown = 3600 if "rate limit" in str(exc).lower() else 60 * (2 ** self.request.retries)
         try:
-            raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+            raise self.retry(exc=exc, countdown=countdown)
         except self.MaxRetriesExceededError:
             send_pipeline_failure_alert(
                 "ingest_fec",

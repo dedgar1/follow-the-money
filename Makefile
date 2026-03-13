@@ -36,7 +36,7 @@ dev:
 ## Use this after editing pipeline tasks or any other worker code.
 reload:
 	@echo "Restarting Celery worker and beat…"
-	@$(COMPOSE) restart worker beat
+	@$(COMPOSE) restart worker worker2 worker3 beat
 	@echo "Done. API and frontend are already live-reloading."
 
 ## Rebuild Docker images then restart all services.
@@ -108,9 +108,10 @@ codegen:
 
 CELERY_CALL = $(COMPOSE) exec -T api celery --app=pipeline.celery_app.celery_app call
 
-## Run all pipeline stages in sequence (blocking).
-pipeline: task-ingest-fec task-ingest-votes task-resolve-identities task-classify-bills task-aggregate-finance task-compute-correlations
-	@echo "Pipeline Triggered."
+## Run all pipeline stages in sequence via Celery chain (each stage waits for the previous).
+pipeline:
+	@$(CELERY_CALL) pipeline.celery_app.run_pipeline
+	@echo "Pipeline chain queued — check http://localhost:5555 for progress."
 
 ## Stage 1 — Fetch FEC contribution filings into raw tables.
 task-ingest-fec:

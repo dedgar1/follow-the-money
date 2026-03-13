@@ -631,22 +631,29 @@ class TestFinanceDomainPurity:
 
 
 class TestCeleryBeatSchedule:
-    def test_aggregate_finance_in_beat_schedule(self):
+    def test_single_nightly_pipeline_entry(self):
         from pipeline.celery_app import celery_app
-        assert "nightly-aggregate-finance" in celery_app.conf.beat_schedule
+        assert "nightly-pipeline" in celery_app.conf.beat_schedule
 
-    def test_aggregate_finance_task_name(self):
+    def test_nightly_pipeline_task_name(self):
         from pipeline.celery_app import celery_app
-        task_config = celery_app.conf.beat_schedule["nightly-aggregate-finance"]
-        assert task_config["task"] == "pipeline.tasks.aggregate_finance.run"
+        task_config = celery_app.conf.beat_schedule["nightly-pipeline"]
+        assert task_config["task"] == "pipeline.celery_app.run_pipeline"
 
-    def test_pipeline_order_is_correct(self):
-        """aggregate_finance must run after resolve_identities."""
+    def test_all_stages_included(self):
+        """Every pipeline stage must be registered so the chain can find them."""
         from pipeline.celery_app import celery_app
-        schedule = celery_app.conf.beat_schedule
-        resolve_hour = min(schedule["nightly-resolve-identities"]["schedule"].hour)
-        aggregate_hour = min(schedule["nightly-aggregate-finance"]["schedule"].hour)
-        assert aggregate_hour > resolve_hour
+        included = celery_app.conf.include
+        expected = [
+            "pipeline.tasks.ingest_fec",
+            "pipeline.tasks.ingest_votes",
+            "pipeline.tasks.resolve_identities",
+            "pipeline.tasks.classify_bills",
+            "pipeline.tasks.aggregate_finance",
+            "pipeline.tasks.compute_correlations",
+        ]
+        for module in expected:
+            assert module in included, f"{module} missing from celery_app.conf.include"
 
 
 # ── PostgresFundingQueryPort ───────────────────────────────────────────────────

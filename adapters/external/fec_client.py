@@ -77,15 +77,7 @@ class FECApiClient:
             if last_indexes:
                 params.update(last_indexes)
 
-            for attempt in range(3):
-                try:
-                    response = self._client.get("/schedules/schedule_a/", params=params)
-                    break
-                except httpx.ReadTimeout:
-                    if attempt == 2:
-                        raise FECApiError("FEC API timed out after 3 attempts") from None
-                    import time
-                    time.sleep(5 * (attempt + 1))
+            response = _get_with_retry(self._client, "/schedules/schedule_a/", params=params)
             _raise_for_status(response)
             body = response.json()
 
@@ -178,9 +170,29 @@ class FECApiClient:
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
+def _get_with_retry(client: httpx.Client, url: str, params: dict) -> httpx.Response:
+    """GET with retries for transient timeouts and rate limits (429)."""
+    import time
+
+    for attempt in range(4):
+        try:
+            response = client.get(url, params=params)
+        except httpx.ReadTimeout:
+            if attempt == 3:
+                raise FECApiError("FEC API timed out after 4 attempts") from None
+            time.sleep(5 * (attempt + 1))
+            continue
+
+        if response.status_code == 429:
+            wait = int(response.headers.get("Retry-After", 3600))
+            raise FECApiError(f"FEC API rate limit exceeded — retry after {wait}s")
+
+        return response
+
+    raise FECApiError("FEC API failed after retries")  # unreachable but satisfies type checker
+
+
 def _raise_for_status(response: httpx.Response) -> None:
-    if response.status_code == 429:
-        raise FECApiError("FEC API rate limit exceeded — retry after cooling off")
     if response.status_code == 403:
         raise FECApiError("FEC API key invalid or missing")
     try:

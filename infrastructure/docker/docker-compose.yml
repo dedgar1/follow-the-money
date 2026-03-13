@@ -75,8 +75,8 @@ services:
       neo4j:
         condition: service_healthy
 
-  # ── Celery Worker ───────────────────────────────────────────────────────────
-  worker:
+  # ── Celery Workers ──────────────────────────────────────────────────────────
+  worker: &worker
     build:
       context: ../..
       dockerfile: infrastructure/docker/Dockerfile.worker
@@ -96,6 +96,12 @@ services:
       redis:
         condition: service_healthy
     restart: unless-stopped
+
+  worker2:
+    <<: *worker
+
+  worker3:
+    <<: *worker
 
   # ── Celery Beat (scheduler) ─────────────────────────────────────────────────
   beat:

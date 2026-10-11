@@ -15,7 +15,7 @@ Pipeline order:
 
 from __future__ import annotations
 
-from celery import Celery, chain, group
+from celery import Celery, chain, chord, group
 from celery.schedules import crontab
 
 from infrastructure.config import get_settings
@@ -70,13 +70,23 @@ def run_pipeline() -> None:
     def si(name: str):
         return celery_app.signature(name, immutable=True)
 
-    tail = [
-        si("pipeline.tasks.resolve_identities.run"),
-        si("pipeline.tasks.classify_bills.run"),
-        si("pipeline.tasks.aggregate_finance.run"),
-        si("pipeline.tasks.compute_correlations.run"),
-    ]
-    group(
-        chain(si("pipeline.tasks.ingest_fec.run"), *tail),
-        chain(si("pipeline.tasks.ingest_votes.run"), *tail),
+    # Stage 1: ingest_fec and ingest_votes in parallel
+    # Stage 2: resolve_identities and classify_bills in parallel
+    #          (resolve → aggregate_finance as a chain; classify_bills standalone)
+    # Stage 3: compute_correlations waits for both aggregate_finance and classify_bills
+    chord(
+        group(
+            si("pipeline.tasks.ingest_fec.run"),
+            si("pipeline.tasks.ingest_votes.run"),
+        ),
+        chord(
+            group(
+                chain(
+                    si("pipeline.tasks.resolve_identities.run"),
+                    si("pipeline.tasks.aggregate_finance.run"),
+                ),
+                si("pipeline.tasks.classify_bills.run"),
+            ),
+            si("pipeline.tasks.compute_correlations.run"),
+        ),
     ).delay()

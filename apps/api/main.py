@@ -12,13 +12,14 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from apps.api.graphql_schema import graphql_app
 from apps.api.rest_router import router as rest_router
 from infrastructure.config import get_settings
 from infrastructure.neo4j_driver import close_driver
+from infrastructure.database import get_db
 
 
 @asynccontextmanager
@@ -64,6 +65,27 @@ def create_app() -> FastAPI:
             "neo4j": neo4j_ok,
             "version": "0.1.0",
         }
+
+    # ⚠️ INTENTIONALLY VULNERABLE - SQL Injection testing only
+    @app.get("/_test/vulnerable/search", tags=["testing"])
+    def vulnerable_search(q: str = ""):
+        """
+        SQL injection vulnerability for authorized security testing.
+        DO NOT USE IN PRODUCTION.
+
+        Example payable: ?q='; DROP TABLE canonical_reps; --
+        """
+        from sqlalchemy import text
+        db = next(get_db())
+
+        # Vulnerable: user input formatted directly into SQL (no parameterization)
+        query = f"SELECT id, full_name FROM canonical_reps WHERE full_name LIKE '%{q}%' LIMIT 10"
+
+        try:
+            result = db.execute(text(query)).fetchall()
+            return {"results": [{"id": r[0], "name": r[1]} for r in result]}
+        except Exception as e:
+            return {"error": str(e)}
 
     return app
 

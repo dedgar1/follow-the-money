@@ -40,7 +40,7 @@ jobs:
         run: npm install -g pnpm
 
       - name: Install frontend dependencies
-        run: cd apps/web && pnpm install --allow-build
+        run: cd apps/web && pnpm install
 
       - name: Run frontend tests
         run: cd apps/web && pnpm test --run

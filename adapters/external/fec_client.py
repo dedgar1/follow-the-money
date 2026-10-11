@@ -19,6 +19,14 @@ class FECApiError(Exception):
     """Raised when the FEC API returns an error or unexpected response."""
 
 
+class FECRateLimitError(FECApiError):
+    """Raised when the FEC API responds with HTTP 429. Carries the retry_after seconds."""
+
+    def __init__(self, retry_after: int) -> None:
+        super().__init__(f"FEC API rate limit exceeded — retry after {retry_after}s")
+        self.retry_after = retry_after
+
+
 class FECApiClient:
     BASE_URL = "https://api.open.fec.gov/v1"
     DEFAULT_PER_PAGE = 100
@@ -185,7 +193,7 @@ def _get_with_retry(client: httpx.Client, url: str, params: dict) -> httpx.Respo
 
         if response.status_code == 429:
             wait = int(response.headers.get("Retry-After", 3600))
-            raise FECApiError(f"FEC API rate limit exceeded — retry after {wait}s")
+            raise FECRateLimitError(wait)
 
         return response
 

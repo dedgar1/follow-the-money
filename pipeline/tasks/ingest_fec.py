@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 
 from ulid import ULID
 
-from adapters.external.fec_client import FECApiClient, FECApiError
+from adapters.external.fec_client import FECApiClient, FECApiError, FECRateLimitError
 from domain.ingestion.models import RawFiling
 from infrastructure.config import get_settings
 from infrastructure.database import get_session
@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 @celery_app.task(
     name="pipeline.tasks.ingest_fec.run",
     bind=True,
-    max_retries=3,
-    default_retry_delay=60,  # seconds; Celery doubles this on each retry (exponential)
+    max_retries=10,
+    default_retry_delay=65,
 )
 def run(self) -> dict:
     """
@@ -47,30 +47,23 @@ def run(self) -> dict:
 
     try:
         rows_written = _fetch_and_store(cycle)
-    except FECApiError as exc:
-        logger.error("ingest_fec: FEC API error on attempt %d: %s", self.request.retries + 1, exc)
-        # Rate limit needs a full hour to reset; other errors use exponential backoff
-        countdown = 3600 if "rate limit" in str(exc).lower() else 60 * (2 ** self.request.retries)
-        try:
-            raise self.retry(exc=exc, countdown=countdown)
-        except self.MaxRetriesExceededError:
+    except FECRateLimitError as exc:
+        countdown = max(65, exc.retry_after + 5)
+        logger.warning("ingest_fec: rate limited — retrying in %ds", countdown)
+        if self.request.retries >= self.max_retries:
             send_pipeline_failure_alert(
-                "ingest_fec",
-                exc,
-                extra={"cycle": cycle, "retries": self.max_retries},
+                "ingest_fec", exc, extra={"cycle": cycle, "retries": self.max_retries}
             )
             raise
-    except Exception as exc:
-        logger.exception("ingest_fec: unexpected error: %s", exc)
-        try:
-            raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
-        except self.MaxRetriesExceededError:
+        raise self.retry(exc=exc, countdown=countdown)
+    except (FECApiError, Exception) as exc:
+        logger.error("ingest_fec: error on attempt %d: %s", self.request.retries + 1, exc)
+        if self.request.retries >= self.max_retries:
             send_pipeline_failure_alert(
-                "ingest_fec",
-                exc,
-                extra={"cycle": cycle, "retries": self.max_retries},
+                "ingest_fec", exc, extra={"cycle": cycle, "retries": self.max_retries}
             )
             raise
+        raise self.retry(exc=exc, countdown=65 * (2 ** self.request.retries))
 
     StalenessTracker().record_success()
     send_pipeline_success_alert("ingest_fec", rows_written=rows_written)

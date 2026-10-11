@@ -65,13 +65,18 @@ def run_pipeline() -> None:
     Launch the full nightly pipeline as a chain.
     Each stage only executes if the previous one succeeded.
     """
+    # si() = immutable signature: prevents the previous task's return value
+    # from being forwarded as an argument to the next task.
+    def si(name: str):
+        return celery_app.signature(name, immutable=True)
+
     tail = [
-        celery_app.signature("pipeline.tasks.resolve_identities.run"),
-        celery_app.signature("pipeline.tasks.classify_bills.run"),
-        celery_app.signature("pipeline.tasks.aggregate_finance.run"),
-        celery_app.signature("pipeline.tasks.compute_correlations.run"),
+        si("pipeline.tasks.resolve_identities.run"),
+        si("pipeline.tasks.classify_bills.run"),
+        si("pipeline.tasks.aggregate_finance.run"),
+        si("pipeline.tasks.compute_correlations.run"),
     ]
     group(
-        chain(celery_app.signature("pipeline.tasks.ingest_fec.run"), *tail),
-        chain(celery_app.signature("pipeline.tasks.ingest_votes.run"), *tail),
+        chain(si("pipeline.tasks.ingest_fec.run"), *tail),
+        chain(si("pipeline.tasks.ingest_votes.run"), *tail),
     ).delay()

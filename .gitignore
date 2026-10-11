@@ -221,3 +221,9 @@ apps/web/out/
 
 # Generated
 apps/web/lib/api/types.ts
+
+# CodeQL generated files
+flask-db/
+*.sarif
+results*.csv
+codeql/
